@@ -28,7 +28,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         String name = oauthUser.getAttribute("name");
 
         // DB에 존재하는지 확인
-        Optional<User> optionalUser = userRepository.findByEmail(email);
+        Optional<User> optionalUser = userRepository.findByUsername();
         User user;
         if (optionalUser.isPresent()) {
             user = optionalUser.get();
