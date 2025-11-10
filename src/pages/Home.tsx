@@ -16,7 +16,6 @@ import {
   Typography,
 } from "@mui/material";
 import {
-  // ChatBubbleOutline,
   LocationOn,
   Search as SearchIcon,
   SecurityOutlined,
