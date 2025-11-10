@@ -38,4 +38,24 @@ public class JwtService {
             return false;
         }
     }
+
+    // oauth2 관련 로직
+    public String generateAccessToken(String username) {
+        return Jwts.builder()
+                .setSubject(username)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + 3600_000)) // 예: 1시간
+                .signWith(key)
+                .compact();
+    }
+
+    public String generateRefreshToken(String username) {
+        return Jwts.builder()
+                .setSubject(username)
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + 7 * 24 * 3600_000)) // 예: 7일
+                .signWith(key)
+                .compact();
+    }
+
 }

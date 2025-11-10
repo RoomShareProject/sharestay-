@@ -22,7 +22,10 @@ public class User {
     private final String username;
 
     @Column(nullable = false, name = "password_hash")
-    private final String password;
+    private String password; //OAuth2 유저는 null이 가능
+
+    @Column(nullable = false)
+    private String loginType; // local or google
 
     @Column(nullable = false, unique = true)
     private String nickname;
@@ -37,8 +40,13 @@ public class User {
     private final String role;
 
     @Column(nullable = false)
-    private final Date signupDate;
+    private Date signupDate;
 
     @Column(name = "life_style")
     private String lifeStyle;
+
+    @PrePersist
+    public void prePersist() {
+        if (this.signupDate == null) this.signupDate = new Date();
+    }
 }

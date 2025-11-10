@@ -1,6 +1,7 @@
 package com.example.sharestay.securityconfig;
 
 import com.example.sharestay.security.JwtAuthenticationFilter;
+import com.example.sharestay.service.CustomOAuth2UserService;
 import com.example.sharestay.service.JwtService;
 import com.example.sharestay.service.UserDetailsServiceImpl;
 import java.util.List;
@@ -15,6 +16,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -27,10 +29,14 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
     private final UserDetailsServiceImpl userDetailsService;
     private final JwtService jwtService;
+    private final CustomOAuth2UserService customOAuth2UserService;
 
-    public SecurityConfig(UserDetailsServiceImpl userDetailsService, JwtService jwtService) {
+    public SecurityConfig(UserDetailsServiceImpl userDetailsService,
+                          JwtService jwtService,
+                          CustomOAuth2UserService customOAuth2UserService) {
         this.userDetailsService = userDetailsService;
         this.jwtService = jwtService;
+        this.customOAuth2UserService = customOAuth2UserService;
     }
 
     public void configGlobal(AuthenticationManagerBuilder auth) throws Exception {
@@ -76,21 +82,27 @@ public class SecurityConfig {
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
                 // JWT 인증 필터를 UsernamePasswordAuthenticationFilter 앞에 등록
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+
+                // <--- oauth2 로그인 설정
+                .oauth2Login(oauth2 -> oauth2
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .userService(customOAuth2UserService)  //customOAuth2UserService 연결
+                        )
+                        .successHandler((request, response, authentication) -> {
+                            OAuth2User oAuthUser = (OAuth2User) authentication.getPrincipal();
+                            String email = oAuthUser.getAttribute("email");
+
+                            // jwt 발급
+                            String accessToken = jwtService.generateAccessToken(email);
+                            String refreshToken = jwtService.generateRefreshToken(email);
+
+                            response.setHeader("Authorization", "Bearer " + accessToken);
+                            response.setHeader("Refresh-Token", refreshToken);
+                            response.setStatus(200);
+                        })
+                );
 
         return http.build();
     }
-//    @Bean
-//    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-//        http
-//            .csrf(AbstractHttpConfigurer::disable)
-//            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-//            .authorizeHttpRequests(auth -> auth
-//                .requestMatchers(new AntPathRequestMatcher("/api/signup"), new AntPathRequestMatcher("/api/login")).permitAll()
-//                .anyRequest().authenticated()
-//            )
-//            .formLogin(AbstractHttpConfigurer::disable)
-//            .httpBasic(AbstractHttpConfigurer::disable);
-//        return http.build();
-//    }
 }
