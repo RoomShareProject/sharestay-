@@ -16,6 +16,7 @@ import {
   Typography,
 } from "@mui/material";
 import {
+
   LocationOn,
   Search as SearchIcon,
   SecurityOutlined,
@@ -287,6 +288,7 @@ export default function Home() {
           pb: { xs: 12, md: 18 },
         }}
       >
+        {/* <SiteHeader /> */}
         <Container maxWidth="lg">
           <Stack
             direction="row"
@@ -399,7 +401,7 @@ export default function Home() {
                   <TextField
                     fullWidth
                     label="지역명 또는 역명을 입력해주세요"
-                    placeholder="예: 강남역, 홍대입구"
+                    placeholder="예: 서재영, 홍대입구"
                     variant="outlined"
                     value={heroKeyword}
                     onChange={(event) => setHeroKeyword(event.target.value)}
@@ -419,6 +421,7 @@ export default function Home() {
                     <MenuItem value="광진구">광진구</MenuItem>
                     <MenuItem value="송파구">송파구</MenuItem>
                     <MenuItem value="용산구">용산구</MenuItem>
+                    <MenuItem value="서재영">서재영</MenuItem>
                   </TextField>
                   <Button
                     type="submit"

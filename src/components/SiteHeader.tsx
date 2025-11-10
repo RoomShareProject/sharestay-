@@ -5,8 +5,8 @@ import { useAuth } from "../auth/useAuth";
 import type { Roles } from "../auth/types";
 
 const navLinks: { label: string; href: string; requireRoles?: Roles[] }[] = [
-  { label: "홈", href: "/" },
-  { label: "안전 지도", href: "/safety-map" },
+  { label: "방찾기", href: "/rooms" },
+  { label: "안전도 지도", href: "/safety-map" },
   { label: "이용 가이드", href: "/guide" },
   { label: "룸 등록", href: "/list-room", requireRoles: ["HOST", "ADMIN"] },
 ];
@@ -23,61 +23,82 @@ export default function SiteHeader(_: Props) {
   });
 
   return (
-    <AppBar
-      position="static"
-      color="transparent"
-      elevation={0}
-      sx={{ borderBottom: "1px solid", borderColor: "divider" }}
-    >
-      <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
-        <Typography
-          component={RouterLink}
-          to="/"
-          variant="h6"
-          fontWeight={700}
-          color="inherit"
-          sx={{ textDecoration: "none" }}
-        >
-          ShareStay+
-        </Typography>
-
-        <Stack direction="row" spacing={2} alignItems="center">
-          {allowedLinks.map((link) => (
-            <Button key={link.href} component={RouterLink} to={link.href} color="inherit">
-              {link.label}
-            </Button>
-          ))}
-        </Stack>
-
-        <Box>
-          {isLoading ? (
-            <Typography variant="body2" color="text.secondary">
-              Loading...
+    <>
+      <AppBar
+        position="fixed"
+        color="default"
+        elevation={0}
+        sx={{
+          borderBottom: "1px solid",
+          borderColor: "divider",
+          backgroundColor: "white",
+          boxShadow: "0px 2px 4px rgba(0,0,0,0.08)",
+        }}
+      >
+        <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
+          <Box sx={{ flex: 1 }}>
+            <Typography
+              component={RouterLink}
+              to="/"
+              variant="h5"
+              fontWeight={700}
+              color="inherit"
+              sx={{
+                textDecoration: "none",
+                ml: 35,
+              }}
+            >
+              ShareStay+
             </Typography>
-          ) : user ? (
-            <Stack direction="row" spacing={1.5} alignItems="center">
-              <Typography variant="body2" fontWeight={600}>
-                {user.nickname ?? user.email ?? user.username}
+          </Box>
+
+          <Box sx={{ flex: 1, display: "flex", justifyContent: "center" }}>
+            <Stack direction="row" spacing={2} alignItems="center">
+              {allowedLinks.map((link) => (
+                <Button
+                  key={link.href}
+                  component={RouterLink}
+                  to={link.href}
+                  color="inherit"
+                  sx={{ fontWeight: 500 }}
+                >
+                  {link.label}
+                </Button>
+              ))}
+            </Stack>
+          </Box>
+
+          <Box sx={{ flex: 1, display: "flex", justifyContent: "flex-end", pr: 2 }}>
+            {isLoading ? (
+              <Typography variant="body2" color="text.secondary">
+                Loading...
               </Typography>
-              <Button component={RouterLink} to="/profile" color="inherit">
-                프로필
-              </Button>
-              <Button onClick={logout} color="inherit">
-                로그아웃
-              </Button>
-            </Stack>
-          ) : (
-            <Stack direction="row" spacing={1}>
-              <Button component={RouterLink} to="/login" color="inherit">
-                로그인
-              </Button>
-              <Button component={RouterLink} to="/signup" variant="contained">
-                회원가입
-              </Button>
-            </Stack>
-          )}
-        </Box>
-      </Toolbar>
-    </AppBar>
+            ) : user ? (
+              <Stack direction="row" spacing={1.5} alignItems="center">
+                <Typography variant="body2" fontWeight={600}>
+                  {user.nickname ?? user.email ?? user.username}
+                </Typography>
+                <Button component={RouterLink} to="/profile" color="inherit">
+                  프로필
+                </Button>
+                <Button onClick={logout} color="inherit">
+                  로그아웃
+                </Button>
+              </Stack>
+            ) : (
+              <Stack direction="row" spacing={1}>
+                <Button component={RouterLink} to="/login" color="inherit">
+                  로그인
+                </Button>
+                <Button component={RouterLink} to="/signup" variant="contained">
+                  회원가입
+                </Button>
+              </Stack>
+            )}
+          </Box>
+        </Toolbar>
+      </AppBar>
+      <Toolbar />
+    </>
   );
 }

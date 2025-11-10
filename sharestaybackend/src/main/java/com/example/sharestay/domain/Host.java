@@ -1,12 +1,21 @@
 package com.example.sharestay.domain;
 
-import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+import lombok.*;
 
-@Data
+@Getter
+@Setter
 @Entity
-@NoArgsConstructor(force = true)
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Host {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -14,18 +23,19 @@ public class Host {
     private Long id;
 
     @Column(nullable = false)
-    private final String introduction;
+    private String introduction;
 
-    @Column(nullable = false)
-    private final boolean terms_agreed;
+    @Column(nullable = false, name = "terms_agreed")
+    private boolean termsAgreed;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")  // FK 컬럼 이름
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
-    public Host(String introduction, boolean terms_agreed, User user) {
+
+    public Host(String introduction, boolean termsAgreed, User user) {
         this.introduction = introduction;
-        this.terms_agreed = terms_agreed;
+        this.termsAgreed = termsAgreed;
         this.user = user;
     }
 }

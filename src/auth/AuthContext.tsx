@@ -25,6 +25,8 @@ type BackendUser = {
   phoneNumber?: string;
   lifeStyle?: string;
   signupDate?: string;
+  hostIntroduction?: string;
+  hostTermsAgreed?: boolean;
 };
 
 type AuthContextType = {
@@ -67,6 +69,8 @@ function mapUser(dto: BackendUser): UserInfo {
     phoneNumber: dto.phoneNumber,
     lifeStyle: dto.lifeStyle,
     signupDate: dto.signupDate,
+    hostIntroduction: dto.hostIntroduction,
+    hostTermsAgreed: dto.hostTermsAgreed,
   };
 }
 

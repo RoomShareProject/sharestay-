@@ -11,6 +11,7 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Setter
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -21,15 +22,18 @@ public class User {
     private String username;
 
     @Column(nullable = false, name = "password_hash")
-    private String password;
+    private String password; //OAuth2 유저는 null이 가능
+
+    @Column(nullable = false)
+    private String loginType; // local or google
 
     @Column(nullable = false, unique = true)
     private String nickname;
 
-    @Column(nullable = false)
+    @Column(name = "address")
     private String address;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String phoneNumber;
 
     @Column(nullable = false)
@@ -40,4 +44,9 @@ public class User {
 
     @Column(name = "life_style")
     private String lifeStyle;
+
+    @PrePersist
+    public void prePersist() {
+        if (this.signupDate == null) this.signupDate = new Date();
+    }
 }

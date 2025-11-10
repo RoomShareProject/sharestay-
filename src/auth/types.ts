@@ -12,6 +12,8 @@ export interface UserInfo {
   phoneNumber?: string;
   lifeStyle?: string;
   signupDate?: string;
+  hostIntroduction?: string;
+  hostTermsAgreed?: boolean;
 }
 
 export interface LoginResponse {
@@ -26,6 +28,8 @@ export interface SignupPayload {
   phoneNumber: string;
   lifeStyle: string;
   role: Roles;
+  hostIntroduction?: string;
+  hostTermsAgreed?: boolean;
 }
 
 export interface UpdateProfilePayload {
@@ -33,6 +37,7 @@ export interface UpdateProfilePayload {
   address?: string;
   phoneNumber?: string;
   lifeStyle?: string;
+  hostIntroduction?: string;
 }
 
 export interface ApiEnvelope<T> {

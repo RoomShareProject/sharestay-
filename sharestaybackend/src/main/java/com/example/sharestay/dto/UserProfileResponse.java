@@ -1,5 +1,6 @@
 package com.example.sharestay.dto;
 
+import java.util.Date;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,18 +10,15 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class SignupRequest {
-    // user
+public class UserProfileResponse {
+    private Long id;
     private String username;
-    private String password;
     private String nickname;
     private String address;
     private String phoneNumber;
     private String lifeStyle;
     private String role;
-
-
-    // host
+    private Date signupDate;
     private String hostIntroduction;
-    private boolean hostTermsAgreed;
+    private Boolean hostTermsAgreed;
 }

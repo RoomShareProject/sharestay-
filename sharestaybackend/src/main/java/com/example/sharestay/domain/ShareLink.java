@@ -3,9 +3,6 @@ package com.example.sharestay.domain;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
-
-import java.time.LocalDateTime;
 
 @Entity
 @NoArgsConstructor

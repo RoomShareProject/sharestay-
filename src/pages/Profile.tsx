@@ -23,6 +23,7 @@ interface ProfileForm {
   address: string;
   phoneNumber: string;
   lifeStyle: string;
+  hostIntroduction: string;
 }
 
 export default function Profile() {
@@ -35,6 +36,7 @@ export default function Profile() {
     address: "",
     phoneNumber: "",
     lifeStyle: "",
+    hostIntroduction: "",
   });
 
   useEffect(() => {
@@ -44,13 +46,16 @@ export default function Profile() {
         address: user.address ?? "",
         phoneNumber: user.phoneNumber ?? "",
         lifeStyle: user.lifeStyle ?? "",
+        hostIntroduction: user.hostIntroduction ?? "",
       });
     }
   }, [user?.id]);
 
   const roles = useMemo(() => user?.roles ?? (user?.role ? [user.role] : []), [user]);
 
-  const handleChange = (field: keyof ProfileForm) =>
+  type EditableTextField = "nickname" | "address" | "phoneNumber" | "lifeStyle" | "hostIntroduction";
+
+  const handleChange = (field: EditableTextField) =>
     (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       setForm((prev) => ({ ...prev, [field]: event.target.value }));
     };
@@ -62,6 +67,7 @@ export default function Profile() {
       address: user.address ?? "",
       phoneNumber: user.phoneNumber ?? "",
       lifeStyle: user.lifeStyle ?? "",
+      hostIntroduction: user.hostIntroduction ?? "",
     });
     setIsEditing(false);
   };
@@ -289,6 +295,35 @@ export default function Profile() {
                   onChange={handleChange("lifeStyle")}
                 />
               </Box>
+
+              {roles.includes("HOST") && (
+                <Box>
+                  <Typography variant="h6" fontWeight={700} gutterBottom>
+                    호스트 정보
+                  </Typography>
+                  <Divider sx={{ mb: 3 }} />
+                  <Stack spacing={2.5}>
+                    <Stack spacing={1}>
+                      <Typography variant="overline" color="text.secondary">
+                        호스트 소개
+                      </Typography>
+                      {isEditing ? (
+                        <TextField
+                          multiline
+                          minRows={3}
+                          value={form.hostIntroduction}
+                          onChange={handleChange("hostIntroduction")}
+                          fullWidth
+                        />
+                      ) : (
+                        <Typography variant="body1" fontWeight={500}>
+                          {form.hostIntroduction || "-"}
+                        </Typography>
+                      )}
+                    </Stack>
+                  </Stack>
+                </Box>
+              )}
             </Stack>
           </Box>
         </Box>

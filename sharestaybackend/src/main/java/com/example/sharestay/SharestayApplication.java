@@ -36,13 +36,10 @@ public class SharestayApplication implements CommandLineRunner {
                 .nickname("도하 킴")
                 .address("인천, 대한민국")
                 .phoneNumber("010-1234-5678")
-                .role("GUEST")
+                .role("ADMIN")
                 .lifeStyle("금연 · 반려동물 없음 · 조용한 활동 선호")
                 .signupDate(new Date())
                 .build();
         userRepository.save(user);
-
-        Host host = new Host("방 탈출을 사랑하는 호스트입니다.", true, user);
-        hostRepository.save(host);
     }
 }

@@ -1,21 +1,28 @@
 package com.example.sharestay.service;
 
+import com.example.sharestay.domain.Host;
+import com.example.sharestay.domain.HostRepository;
 import com.example.sharestay.domain.User;
 import com.example.sharestay.domain.UserRepository;
 import com.example.sharestay.dto.AuthResponse;
 import com.example.sharestay.dto.SignupRequest;
 import com.example.sharestay.dto.UpdateUserRequest;
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.stereotype.Service;
-
+import com.example.sharestay.dto.UserProfileResponse;
+import com.example.sharestay.security.SecurityUtils;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
+    private final HostRepository hostRepository;
     private final BCryptPasswordEncoder passwordEncoder;
 
     public AuthResponse signup(SignupRequest request) {
@@ -34,35 +41,49 @@ public class UserService {
                 .signupDate(new Date())
                 .build();
 
-        userRepository.save(user);
+        User savedUser = userRepository.save(user);
+        Host host = null;
 
-        return createAuthResponse(user);
+        if ("HOST".equalsIgnoreCase(request.getRole())) {
+            if (request.getHostIntroduction() == null || request.getHostIntroduction().isEmpty()) {
+                throw new RuntimeException("호스트 소개를 입력해 주세요.");
+            }
+            if (!request.isHostTermsAgreed()) {
+                throw new RuntimeException("호스트 약관에 동의해야 합니다.");
+            }
+
+//            host = new Host.HostBuilder()
+//                    .id()
+//                    .introduction(request.getHostIntroduction())
+//                    .termsAgreed(request.isHostTermsAgreed())
+//                    .user(request.)
+//                    .build();
+
+            host = new Host(request.getHostIntroduction(), request.isHostTermsAgreed(), savedUser);
+            hostRepository.save(host);
+        }
+
+        return AuthResponse.from(savedUser, host);
     }
 
-    private AuthResponse createAuthResponse(User user) {
-        String accessToken = "fake-jwt-token-for-" + user.getUsername();
-        String refreshToken = "fake-refresh-token";
 
-        return AuthResponse.builder()
-                .accessToken(accessToken)
-                .refreshToken(refreshToken)
-                .username(user.getUsername())
-                .nickname(user.getNickname())
-                .role(user.getRole())
-                .build();
+
+    public UserProfileResponse getUser(String username) {
+        assertSelfOrAdmin(username);
+        User user = loadUserEntity(username);
+        return toResponse(user);
     }
 
-    public User getUser(String username) {
-        return userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+    public List<UserProfileResponse> getAllUser() {
+        assertAdmin();
+        return userRepository.findAll().stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
     }
 
-    public List<User> getAllUser() {
-        return userRepository.findAll();
-    }
-
-    public User updateUser(String username, UpdateUserRequest request) {
-        User user = getUser(username);
+    public UserProfileResponse updateUser(String username, UpdateUserRequest request) {
+        assertSelfOrAdmin(username);
+        User user = loadUserEntity(username);
 
         if (request.getNickname() != null) {
             user.setNickname(request.getNickname());
@@ -77,6 +98,64 @@ public class UserService {
             user.setLifeStyle(request.getLifeStyle());
         }
 
-        return userRepository.save(user);
+        handleHostUpdate(user, request);
+
+        User saved = userRepository.save(user);
+        return toResponse(saved);
+    }
+
+    private void handleHostUpdate(User user, UpdateUserRequest request) {
+        if (request.getHostIntroduction() == null) {
+            return;
+        }
+        if (!"HOST".equalsIgnoreCase(user.getRole()) && !SecurityUtils.isAdmin()) {
+            throw new AccessDeniedException("호스트 정보는 호스트 계정만 수정할 수 있습니다.");
+        }
+        Host host = hostRepository.findByUser(user)
+                .orElseGet(() -> Host.builder()
+                        .user(user)
+                        .introduction("")
+                        .termsAgreed(true)
+                        .build());
+
+        host.setIntroduction(request.getHostIntroduction());
+        hostRepository.save(host);
+    }
+
+    private User loadUserEntity(String username) {
+        Optional<User> user = userRepository.findByUsername(username);
+        return user.orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+    }
+
+    private UserProfileResponse toResponse(User user) {
+        Host host = hostRepository.findByUser(user).orElse(null);
+        return UserProfileResponse.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .nickname(user.getNickname())
+                .address(user.getAddress())
+                .phoneNumber(user.getPhoneNumber())
+                .lifeStyle(user.getLifeStyle())
+                .role(user.getRole())
+                .signupDate(user.getSignupDate())
+                .hostIntroduction(host != null ? host.getIntroduction() : null)
+                .hostTermsAgreed(host != null ? host.isTermsAgreed() : null)
+                .build();
+    }
+
+    private void assertSelfOrAdmin(String username) {
+        if (SecurityUtils.isAdmin()) {
+            return;
+        }
+        String currentUser = SecurityUtils.getCurrentUsername();
+        if (currentUser == null || !currentUser.equalsIgnoreCase(username)) {
+            throw new AccessDeniedException("본인 정보에 대해서만 접근할 수 있습니다.");
+        }
+    }
+
+    private void assertAdmin() {
+        if (!SecurityUtils.isAdmin()) {
+            throw new AccessDeniedException("관리자 권한이 필요합니다.");
+        }
     }
 }

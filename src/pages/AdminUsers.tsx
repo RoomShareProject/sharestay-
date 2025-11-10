@@ -37,6 +37,11 @@ interface BackendUser {
   phoneNumber?: string;
   lifeStyle?: string;
   signupDate?: string;
+<<<<<<< HEAD
+=======
+  hostIntroduction?: string;
+  hostTermsAgreed?: boolean;
+>>>>>>> main
 }
 
 interface AdminUser extends UserInfo {}
@@ -52,6 +57,11 @@ const mapBackendUser = (user: BackendUser): AdminUser => ({
   phoneNumber: user.phoneNumber,
   lifeStyle: user.lifeStyle,
   signupDate: user.signupDate,
+<<<<<<< HEAD
+=======
+  hostIntroduction: user.hostIntroduction,
+  hostTermsAgreed: user.hostTermsAgreed,
+>>>>>>> main
 });
 
 interface EditForm {
@@ -59,6 +69,10 @@ interface EditForm {
   address: string;
   phoneNumber: string;
   lifeStyle: string;
+<<<<<<< HEAD
+=======
+  hostIntroduction: string;
+>>>>>>> main
 }
 
 export default function AdminUsers() {
@@ -73,6 +87,10 @@ export default function AdminUsers() {
     address: "",
     phoneNumber: "",
     lifeStyle: "",
+<<<<<<< HEAD
+=======
+    hostIntroduction: "",
+>>>>>>> main
   });
 
   const fetchUsers = async () => {
@@ -101,6 +119,10 @@ export default function AdminUsers() {
       address: user.address ?? "",
       phoneNumber: user.phoneNumber ?? "",
       lifeStyle: user.lifeStyle ?? "",
+<<<<<<< HEAD
+=======
+      hostIntroduction: user.hostIntroduction ?? "",
+>>>>>>> main
     });
     setDialogOpen(true);
   };
@@ -108,10 +130,25 @@ export default function AdminUsers() {
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setSelectedUser(null);
+<<<<<<< HEAD
     setForm({ nickname: "", address: "", phoneNumber: "", lifeStyle: "" });
   };
 
   const handleChange = (field: keyof EditForm) =>
+=======
+    setForm({
+      nickname: "",
+      address: "",
+      phoneNumber: "",
+      lifeStyle: "",
+      hostIntroduction: "",
+    });
+  };
+
+  type EditableTextField = "nickname" | "address" | "phoneNumber" | "lifeStyle" | "hostIntroduction";
+
+  const handleChange = (field: EditableTextField) =>
+>>>>>>> main
     (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       setForm((prev) => ({ ...prev, [field]: event.target.value }));
     };
@@ -184,8 +221,14 @@ export default function AdminUsers() {
                     <TableCell>닉네임</TableCell>
                     <TableCell>역할</TableCell>
                     <TableCell>연락처</TableCell>
+<<<<<<< HEAD
                     <TableCell>주소</TableCell>
                     <TableCell>라이프스타일</TableCell>
+=======
+                    <TableCell>주소 (선택)</TableCell>
+                    <TableCell>라이프스타일 (선택)</TableCell>
+                    <TableCell>호스트 소개</TableCell>
+>>>>>>> main
                     <TableCell>가입일</TableCell>
                     <TableCell align="right">관리</TableCell>
                   </TableRow>
@@ -225,6 +268,14 @@ export default function AdminUsers() {
                         </Typography>
                       </TableCell>
                       <TableCell>
+<<<<<<< HEAD
+=======
+                        <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
+                          {user.hostIntroduction ?? "-"}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+>>>>>>> main
                         {user.signupDate
                           ? new Date(user.signupDate).toLocaleDateString()
                           : "-"}
@@ -261,19 +312,42 @@ export default function AdminUsers() {
               fullWidth
             />
             <TextField
+<<<<<<< HEAD
               label="주소"
+=======
+              label="주소 (선택)"
+>>>>>>> main
               value={form.address}
               onChange={handleChange("address")}
               fullWidth
             />
             <TextField
+<<<<<<< HEAD
               label="라이프스타일"
+=======
+              label="라이프스타일 (선택)"
+>>>>>>> main
               value={form.lifeStyle}
               onChange={handleChange("lifeStyle")}
               multiline
               minRows={3}
               fullWidth
             />
+<<<<<<< HEAD
+=======
+            {selectedUser?.roles.includes("HOST") && (
+              <>
+                <TextField
+                  label="호스트 소개"
+                  value={form.hostIntroduction}
+                  onChange={handleChange("hostIntroduction")}
+                  multiline
+                  minRows={3}
+                  fullWidth
+                />
+              </>
+            )}
+>>>>>>> main
           </Stack>
         </DialogContent>
         <DialogActions>

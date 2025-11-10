@@ -8,4 +8,5 @@ public class UpdateUserRequest {
     private String address;
     private String phoneNumber;
     private String lifeStyle;
+    private String hostIntroduction;
 }
