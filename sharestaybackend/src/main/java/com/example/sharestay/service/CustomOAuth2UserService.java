@@ -24,18 +24,18 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         OAuth2User oauthUser = super.loadUser(userRequest);
 
         // OAuth2 공급자에서 가져온 정보 (예: 구글)
-        String email = oauthUser.getAttribute("email");
+        String username = oauthUser.getAttribute("username");
         String name = oauthUser.getAttribute("name");
 
         // DB에 존재하는지 확인
-        Optional<User> optionalUser = userRepository.findByUsername();
+        Optional<User> optionalUser = userRepository.findByUsername(username);
         User user;
         if (optionalUser.isPresent()) {
             user = optionalUser.get();
         } else {
             // 신규 사용자라면 DB에 저장
             user = User.builder()
-                    .username(email)
+                    .username(username)
                     .nickname(name)
                     .password("") // OAuth2 로그인은 비밀번호 없음
                     .role("USER")
@@ -45,8 +45,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         }
 
         // JWT 발급
-        String accessToken = jwtService.generateAccessToken(email);
-        String refreshToken = jwtService.generateRefreshToken(email);
+        String accessToken = jwtService.generateAccessToken(username);
+        String refreshToken = jwtService.generateRefreshToken(username);
 
         // 토큰을 OAuth2User의 속성에 추가 (컨트롤러에서 가져갈 수 있음)
         oauthUser.getAttributes().put("accessToken", accessToken);
