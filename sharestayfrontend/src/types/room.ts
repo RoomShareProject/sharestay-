@@ -8,8 +8,9 @@ export interface RoomImage {
 export type RoomAvailabilityStatus = "AVAILABLE" | "UNAVAILABLE" | "PENDING";
 
 export interface RoomSummary {
-  roomId: number;
-  hostId: number;
+  roomId?: number;
+  id?: number;
+  hostId?: number;
   title: string;
   rentPrice: number;
   address: string;
@@ -23,11 +24,13 @@ export interface RoomSummary {
   tags?: string[];
   isFavorite?: boolean;
   favoriteId?: number;
-  options?: string[] | string;
+  options?: string[] | string | null;
   images?: RoomImage[];
+  shareLinkUrl?: string;
 }
 
 export interface RoomPayload {
+  hostId?: number;
   title: string;
   rentPrice: number;
   address: string;

@@ -34,11 +34,12 @@ const roomSchema = z.object({
   rentPrice: z
     .string()
     .min(1, "월세를 입력해주세요.")
-    .refine((value) => !Number.isNaN(Number(value)), "월세는 숫자로 입력해주세요."),
+    .refine(
+      (value) => !Number.isNaN(Number(value)),
+      "월세는 숫자로 입력해주세요."
+    ),
   type: z.string().min(1, "방 유형을 선택해주세요."),
-  availabilityStatus: z
-    .string()
-    .min(1, "모집 상태를 선택해주세요."),
+  availabilityStatus: z.string().min(1, "모집 상태를 선택해주세요."),
   address: z.string().min(1, "주소를 입력해주세요."),
   latitude: z
     .string()
@@ -172,7 +173,8 @@ export default function ListRoom() {
           ? Number(values.longitude)
           : undefined;
 
-      if (Number.isNaN(rentPrice)) throw new Error("월세 값이 올바르지 않습니다.");
+      if (Number.isNaN(rentPrice))
+        throw new Error("월세 값이 올바르지 않습니다.");
       if (Number.isNaN(latitude ?? 0) && latitude !== undefined)
         throw new Error("위도 값이 올바르지 않습니다.");
       if (Number.isNaN(longitude ?? 0) && longitude !== undefined)
@@ -184,8 +186,7 @@ export default function ListRoom() {
         address: values.address,
         type: values.type,
         description: values.description,
-        availabilityStatus:
-          values.availabilityStatus as RoomAvailabilityStatus,
+        availabilityStatus: values.availabilityStatus as RoomAvailabilityStatus,
         latitude,
         longitude,
         options: Array.from(
@@ -242,7 +243,10 @@ export default function ListRoom() {
             onSubmit={handleSubmit(onSubmit)}
           >
             <Stack spacing={4}>
-              <SectionTitle icon={<HomeWork color="primary" />} title="기본 정보" />
+              <SectionTitle
+                icon={<HomeWork color="primary" />}
+                title="기본 정보"
+              />
               <Grid container spacing={3}>
                 <Grid size={{ xs: 12 }}>
                   <FormTextField

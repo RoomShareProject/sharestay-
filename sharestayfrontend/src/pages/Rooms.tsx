@@ -1,4 +1,4 @@
-// src/pages/Rooms.tsx
+﻿// src/pages/Rooms.tsx
 import {
   Box,
   Button,
@@ -178,9 +178,10 @@ export default function Rooms() {
           )
         );
       } else {
-        const { data } = await api.post<
-          ApiEnvelope<{ favoriteId: number }>
-        >("/favorites", { roomId: room.roomId });
+        const { data } = await api.post<ApiEnvelope<{ favoriteId: number }>>(
+          "/favorites",
+          { roomId: room.roomId }
+        );
         const favoriteId = data.result?.favoriteId ?? room.roomId;
         setFavorites((prev) => new Set(prev).add(room.roomId));
         setRooms((prev) =>
@@ -202,9 +203,9 @@ export default function Rooms() {
 
   const createShareLink = async (roomId: number) => {
     try {
-      const { data } = await api.post<
-        ApiEnvelope<{ link: string }>
-      >(`/rooms/${roomId}/share-links`);
+      const { data } = await api.post<ApiEnvelope<{ link: string }>>(
+        `/rooms/${roomId}/share-links`
+      );
       const link = data.result?.link;
       if (link && navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(link).catch(() => undefined);
@@ -343,7 +344,12 @@ export default function Rooms() {
                     <Typography variant="subtitle2" color="text.secondary">
                       편의시설
                     </Typography>
-                    <Stack spacing={1} flexWrap="wrap" direction="row" useFlexGap>
+                    <Stack
+                      spacing={1}
+                      flexWrap="wrap"
+                      direction="row"
+                      useFlexGap
+                    >
                       {filterFacilities.map((facility) => (
                         <Chip
                           key={facility}
@@ -374,7 +380,11 @@ export default function Rooms() {
                     </Typography>
                   </Stack>
                   <Stack direction="row" spacing={1}>
-                    <Select defaultValue="추천순" size="small" sx={{ borderRadius: 999 }}>
+                    <Select
+                      defaultValue="추천순"
+                      size="small"
+                      sx={{ borderRadius: 999 }}
+                    >
                       <MenuItem value="추천순">추천순</MenuItem>
                       <MenuItem value="가격낮은순">가격 낮은 순</MenuItem>
                       <MenuItem value="가격높은순">가격 높은 순</MenuItem>
@@ -434,13 +444,21 @@ export default function Rooms() {
                               component="img"
                               src={imageUrl}
                               alt={room.title}
-                              sx={{ height: 200, width: "100%", objectFit: "cover" }}
+                              sx={{
+                                height: 200,
+                                width: "100%",
+                                objectFit: "cover",
+                              }}
                             />
-                            <CardContent sx={{ display: "grid", gap: 1.5, flexGrow: 1 }}>
+                            <CardContent
+                              sx={{ display: "grid", gap: 1.5, flexGrow: 1 }}
+                            >
                               <Stack direction="row" spacing={1}>
                                 {typeof room.safetyScore === "number" && (
                                   <Chip
-                                    label={`안전도 ${Math.round(room.safetyScore)}`}
+                                    label={`안전도 ${Math.round(
+                                      room.safetyScore
+                                    )}`}
                                     color="primary"
                                     size="small"
                                     sx={{ borderRadius: 999 }}
@@ -448,14 +466,18 @@ export default function Rooms() {
                                 )}
                                 {typeof room.trustScore === "number" && (
                                   <Chip
-                                    label={`신뢰도 ${Math.round(room.trustScore)}`}
+                                    label={`신뢰도 ${Math.round(
+                                      room.trustScore
+                                    )}`}
                                     color="success"
                                     size="small"
                                     sx={{ borderRadius: 999 }}
                                   />
                                 )}
                                 <Chip
-                                  label={availabilityLabel(room.availabilityStatus)}
+                                  label={availabilityLabel(
+                                    room.availabilityStatus
+                                  )}
                                   size="small"
                                   sx={{ borderRadius: 999 }}
                                 />
@@ -463,21 +485,40 @@ export default function Rooms() {
                               <Typography variant="h6" fontWeight={700}>
                                 {room.title}
                               </Typography>
-                              <Stack direction="row" spacing={1} alignItems="center">
+                              <Stack
+                                direction="row"
+                                spacing={1}
+                                alignItems="center"
+                              >
                                 <LocationOn fontSize="small" color="action" />
-                                <Typography variant="body2" color="text.secondary">
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                >
                                   {room.address}
                                 </Typography>
                               </Stack>
-                              <Typography variant="body1" fontWeight={700} color="primary">
+                              <Typography
+                                variant="body1"
+                                fontWeight={700}
+                                color="primary"
+                              >
                                 {formatCurrency(room.rentPrice)}
                               </Typography>
                               {room.description && (
-                                <Typography variant="body2" color="text.secondary">
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                >
                                   {room.description}
                                 </Typography>
                               )}
-                              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                              <Stack
+                                direction="row"
+                                spacing={1}
+                                flexWrap="wrap"
+                                useFlexGap
+                              >
                                 {tags.slice(0, 4).map((tag) => (
                                   <Chip
                                     key={tag}
