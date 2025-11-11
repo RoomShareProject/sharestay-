@@ -13,8 +13,8 @@ import java.util.List;
 @RequestMapping("/api/rooms")
 @RequiredArgsConstructor
 public class RoomController {
-
     private final RoomService roomService;
+    // 안녕하세요
 
     // 방 등록
     @PostMapping
