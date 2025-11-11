@@ -15,7 +15,9 @@ import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
-@Service
+import java.util.Date;
+import java.util.Optional;
+
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     private final UserRepository userRepository;
@@ -27,8 +29,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     }
 
     @Override
-    @Transactional
-    public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
+    public OAuth2User loadUser(OAuth2UserRequest userRequest) {
         OAuth2User oauthUser = super.loadUser(userRequest);
 
         String email = oauthUser.getAttribute("email");
@@ -39,34 +40,32 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         }
 
         String name = oauthUser.getAttribute("name");
-        String nickname = (name != null && !name.isBlank()) ? name : email;
 
-        User persisted = userRepository.findByUsername(email)
-                .orElseGet(() -> userRepository.save(User.builder()
-                        .username(email)
-                        .password(null)
-                        .loginType(resolveLoginType(userRequest))
-                        .nickname(nickname)
-                        .address("")
-                        .phoneNumber("")
-                        .role("USER")
-                        .signupDate(new Date())
-                        .build()));
+        // DB에 존재하는지 확인
+        Optional<User> optionalUser = userRepository.findByUsername();
+        User user;
+        if (optionalUser.isPresent()) {
+            user = optionalUser.get();
+        } else {
+            // 신규 사용자라면 DB에 저장
+            user = User.builder()
+                    .username(email)
+                    .nickname(name)
+                    .password("") // OAuth2 로그인은 비밀번호 없음
+                    .role("USER")
+                    .signupDate(new Date())
+                    .build();
+            userRepository.save(user);
+        }
 
-        String accessToken = jwtService.generateAccessToken(persisted.getUsername());
-        String refreshToken = jwtService.generateRefreshToken(persisted.getUsername());
+        // JWT 발급
+        String accessToken = jwtService.generateAccessToken(email);
+        String refreshToken = jwtService.generateRefreshToken(email);
 
-        Map<String, Object> attributes = new HashMap<>(oauthUser.getAttributes());
-        attributes.put("accessToken", accessToken);
-        attributes.put("refreshToken", refreshToken);
+        // 토큰을 OAuth2User의 속성에 추가 (컨트롤러에서 가져갈 수 있음)
+        oauthUser.getAttributes().put("accessToken", accessToken);
+        oauthUser.getAttributes().put("refreshToken", refreshToken);
 
-        return new DefaultOAuth2User(oauthUser.getAuthorities(), attributes, "email");
-    }
-
-    private String resolveLoginType(OAuth2UserRequest userRequest) {
-        return Optional.ofNullable(userRequest.getClientRegistration())
-                .map(reg -> reg.getRegistrationId())
-                .map(String::toUpperCase)
-                .orElse("OAUTH");
+        return oauthUser;
     }
 }
