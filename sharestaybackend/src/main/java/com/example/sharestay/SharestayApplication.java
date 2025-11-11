@@ -1,9 +1,8 @@
 package com.example.sharestay;
 
-import com.example.sharestay.domain.Host;
-import com.example.sharestay.domain.HostRepository;
-import com.example.sharestay.domain.User;
-import com.example.sharestay.domain.UserRepository;
+import com.example.sharestay.repository.HostRepository;
+import com.example.sharestay.entity.User;
+import com.example.sharestay.repository.UserRepository;
 import java.util.Date;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;

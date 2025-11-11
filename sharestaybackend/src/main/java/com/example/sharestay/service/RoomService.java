@@ -1,10 +1,10 @@
 // RoomService.java
 package com.example.sharestay.service;
 
-import com.example.sharestay.domain.Host;
-import com.example.sharestay.domain.HostRepository;
-import com.example.sharestay.domain.Room;
-import com.example.sharestay.domain.RoomRepository;
+import com.example.sharestay.entity.Host;
+import com.example.sharestay.repository.HostRepository;
+import com.example.sharestay.entity.Room;
+import com.example.sharestay.repository.RoomRepository;
 import com.example.sharestay.dto.RoomRequest;
 import com.example.sharestay.dto.RoomResponse;
 import lombok.RequiredArgsConstructor;
