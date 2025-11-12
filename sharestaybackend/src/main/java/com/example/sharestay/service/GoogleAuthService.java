@@ -47,21 +47,21 @@ public class GoogleAuthService {
 
         // 4. Payload에서 사용자 정보 추출
         GoogleIdToken.Payload payload = googleIdToken.getPayload();
-        String userEmail = payload.getEmail();
+        String username = payload.getEmail();
 
-        System.out.println("✅ Google 인증 성공. 추출된 이메일: " + userEmail);
+        System.out.println("✅ Google 인증 성공. 추출된 이메일: " + username);
 
         // 4. DB에 사용자 등록/조회 로직 추가 (UsernameNotFoundException 방지)
-        Optional<User> existingUser = userRepository.findByUsername(userEmail);
+        Optional<User> existingUser = userRepository.findByUsername(username);
 
         if (existingUser.isEmpty()) {
             // 새 사용자라면 DB에 저장 (Google 로그인의 경우, 비밀번호는 사용하지 않음)
-            User newUser = new User(userEmail, "", "USER");
+            User newUser = new User(username, "", "USER");
             userRepository.save(newUser);
-            System.out.println("새 Google 사용자(" + userEmail + ")를 DB에 등록했습니다.");
+            System.out.println("새 Google 사용자(" + username + ")를 DB에 등록했습니다.");
         }
 
         // 5. JWT 생성 및 반환
-        return jwtService.generateToken(userEmail);
+        return jwtService.generateToken(username);
     }
 }
