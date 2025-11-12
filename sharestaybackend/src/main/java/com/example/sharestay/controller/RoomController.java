@@ -1,5 +1,6 @@
 package com.example.sharestay.controller;
 
+import com.example.sharestay.dto.RoomDetailResponse;
 import com.example.sharestay.dto.RoomRequest;
 import com.example.sharestay.dto.RoomResponse;
 import com.example.sharestay.service.RoomService;
@@ -70,11 +71,25 @@ public class RoomController {
     }
 
     // 방 상세 조회 이거 수정해야함
-    @Operation(summary = "방 상세 조회", description = "사용자가 특정 방의 상세 정보를 조회합니다.")
-    @GetMapping("/rooms/{roomId}")
-    public ResponseEntity<RoomResponse> getRoomById(@PathVariable Long roomId) {
-        RoomResponse response = roomService.getRoomById(roomId);
-        return ResponseEntity.ok(response);
+//    @Operation(summary = "방 상세 조회", description = "사용자가 특정 방의 상세 정보를 조회합니다.")
+//    @GetMapping("/rooms/{roomId}")
+//    public ResponseEntity<RoomResponse> getRoomById(@PathVariable Long roomId) {
+//        RoomResponse response = roomService.getRoomById(roomId);
+//        return ResponseEntity.ok(response);
+//    }
+
+    // 전체/검색 결과 방 목록
+    @GetMapping
+    public ResponseEntity<List<RoomResponse>> getAllRooms() {
+        List<RoomResponse> rooms = roomService.getRoomList();
+        return ResponseEntity.ok(rooms);
+    }
+
+    // 방 상세 조회
+    @GetMapping("/{roomId}")
+    public ResponseEntity<RoomDetailResponse> getRoomDetail(@PathVariable Long roomId) {
+        RoomDetailResponse detail = roomService.getRoomDetail(roomId);
+        return ResponseEntity.ok(detail);
     }
 
 

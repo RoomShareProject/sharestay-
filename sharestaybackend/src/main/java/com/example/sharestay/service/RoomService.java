@@ -100,14 +100,24 @@ public class RoomService {
         roomRepository.delete(room);
     }
 
-    @Transactional(readOnly = true)
-    public RoomResponse getRoomById(Long roomId) {
-        Room room = roomRepository.findById(roomId)
-                .orElseThrow(() -> new IllegalArgumentException("Room not found"));
+    // 방 검색  (단일 조회용으로만 쓰이는데, 필터/검색 결과에서는 여러 개의 방을 리스트로 가져와야 하므로 이 메서드는 필요없음
+//    @Transactional(readOnly = true)
+//    public RoomResponse getRoomById(Long roomId) {
+//        Room room = roomRepository.findById(roomId)
+//                .orElseThrow(() -> new IllegalArgumentException("Room not found"));
+//
+//        return toResponse(room);
+//    }
 
-        return toResponse(room);
+    @Transactional(readOnly = true)
+    public List<RoomResponse> getRoomList() {
+        return roomRepository.findAll()   // 전체 조회 or 나중에 필터 조건 추가 가능
+                .stream()
+                .map(this::toResponse)    // Room → RoomResponse 변환
+                .collect(Collectors.toList());
     }
 
+    // 방 상세보기
     @Transactional(readOnly = true)
     public RoomDetailResponse getRoomDetail(Long roomId) {
         Room room = roomRepository.findById(roomId)
@@ -119,10 +129,9 @@ public class RoomService {
                 .map(img -> img.getImageUrl())
                 .collect(Collectors.toList());
 
-        String shareLinkUrl = null;
-        if (room.getShareLink() != null) {
-            shareLinkUrl = room.getShareLink().getLinkUrl();
-        }
+        String shareLinkUrl = room.getShareLink() != null
+                ? room.getShareLink().getLinkUrl()
+                : null;
 
         return new RoomDetailResponse(
                 room.getId(),
