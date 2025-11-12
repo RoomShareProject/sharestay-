@@ -51,6 +51,9 @@ public class Room {
     @JoinColumn(name = "host_id")
     private Host host;
 
+    @OneToMany(fetch = FetchType.LAZY)
+    @JoinColumn(name = "image_id", nullable = false, unique = true)
+    private RoomImage roomImg;
 
     // final에 Required 조합이라 RoomService에서 객체 생성하려면 이거 있어야 하는데... 더 간단하게 쓸 수는 없는 거니
     public Room(Host host, String title, double rentPrice, String address, String type,
