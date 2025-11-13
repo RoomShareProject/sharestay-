@@ -35,7 +35,7 @@ public class BanService {
                 .orElseThrow(() -> new EntityNotFoundException("해당 사용자를 찾을 수 없습니다. ID: " + userId));
 
         // 2. 이미 활성 상태의 정지 기록이 있는지 확인
-        banRepository.findByUser_IdAndIsActiveTrue(userId).ifPresent(ban -> {
+        banRepository.findActiveBanByUserId(userId).ifPresent(ban -> {
             throw new IllegalStateException("이미 정지된 사용자입니다.");
         });
 
@@ -46,7 +46,6 @@ public class BanService {
         Ban savedBan = banRepository.save(ban);
         return BanResponse.from(savedBan);
     }
-
     /**
      * 사용자 정지를 해제합니다.
      * @param userId 정지를 해제할 사용자 ID
@@ -54,7 +53,7 @@ public class BanService {
     @Transactional
     public void unbanUser(Long userId) {
         // 1. 활성 상태의 정지 기록을 조회
-        Ban activeBan = banRepository.findByUser_IdAndIsActiveTrue(userId)
+        Ban activeBan = banRepository.findActiveBanByUserId(userId)
                 .orElseThrow(() -> new EntityNotFoundException("해당 사용자에 대한 활성 정지 기록이 없습니다. ID: " + userId));
 
         // 2. 정지 기록을 비활성화
@@ -70,7 +69,7 @@ public class BanService {
         if (!userRepository.existsById(userId)) {
             throw new EntityNotFoundException("해당 사용자를 찾을 수 없습니다. ID: " + userId);
         }
-        return banRepository.findByUser_Id(userId).stream()
+        return banRepository.findByUserId(userId).stream()
                 .map(BanResponse::from)
                 .collect(Collectors.toList());
     }
