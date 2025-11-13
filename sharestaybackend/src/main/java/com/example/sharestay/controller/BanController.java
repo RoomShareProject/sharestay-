@@ -10,11 +10,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@RestController
+@RestController // 이 클래스가 REST API 컨트롤러
 @RequestMapping("/api/bans")
 @RequiredArgsConstructor
 public class BanController {
-
     private final BanService banService;
 
     /**

@@ -50,6 +50,7 @@ public class User {
     }
 
     // local 회원가입 시 사용될 명확한 생성자
+    // 생성자의 직접적인 외부 호출을 막기 위해 private로 변경
     public User(String username, String password, String loginType, String nickname, String address, String phoneNumber, String role, String lifeStyle) {
         this.username = username;
         this.password = password;
@@ -61,10 +62,17 @@ public class User {
         this.lifeStyle = lifeStyle;
     }
 
-    // google 전용 회원가입
-    public User(String username, String password, String loginType) {
+    // Google 전용 생성자는 private, 정적 메서드로 생성
+    private User(String username, String loginType, String role, String nickname) {
         this.username = username;
-        this.password = password;
+        this.password = null; // Google은 비밀번호 없음
         this.loginType = loginType;
+        this.role = role != null ? role : "GUEST";
+        this.nickname = nickname != null ? nickname : "GoogleUser";
+    }
+
+    // Google 회원가입용 정적 팩토리 메서드
+    public static User createGoogleUser(String email) {
+        return new User(email, "google", "GUEST", "GoogleUser");
     }
 }

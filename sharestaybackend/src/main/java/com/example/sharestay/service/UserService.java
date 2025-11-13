@@ -58,8 +58,6 @@ public class UserService {
         return AuthResponse.from(savedUser, host);
     }
 
-
-
     public UserProfileResponse getUser(String username) {
         assertSelfOrAdmin(username);
         User user = loadUserEntity(username);
