@@ -31,7 +31,7 @@ public class Host {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
-
+// 주석
     public Host(String introduction, boolean termsAgreed, User user) {
         this.introduction = introduction;
         this.termsAgreed = termsAgreed;
