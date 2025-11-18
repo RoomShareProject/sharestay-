@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -58,7 +59,13 @@ public class Room {
 
     @JsonIgnoreProperties("room")    // RoomImage 클래스의 필드명이 room이기 때문
     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<RoomImage> roomImages;
+    private List<RoomImage> roomImages = new ArrayList<>();;
+
+    /*
+        List<RoomImage> roomImages 초기화를 new ArrayList<>() 로 해두면 NPE 방지됨.
+
+RoomImage와 ShareLink의 cascade 관계는 명확히 관리되지만, 순환참조 방지를 위해 @ToString.Exclude 추가 추천.
+     */
 
 
     // final에 Required 조합이라 RoomService에서 객체 생성하려면 이거 있어야 하는데... 더 간단하게 쓸 수는 없는 거니
