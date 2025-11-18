@@ -26,6 +26,7 @@ import Privacy from "./pages/Privacy";
 import SafetyMap from "./pages/SafetyMap";
 import LifestyleSetup from "./pages/LifestyleSetup";
 import ProtectedRoute from "./routes/ProtectedRoute";
+import RoomMap from "./pages/RoomMap";
 import { AuthProvider } from "./auth/AuthContext";
 
 const theme = createTheme({

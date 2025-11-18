@@ -22,8 +22,11 @@ import type {
   ShareLinkResponse,
 } from "../types/room";
 import { mapRoomFromApi, resolveRoomImageUrl } from "../types/room";
+import fallbackImageSrc from "../img/no_img.jpg";
+import RoomMap from "../components/RoomMap";
 
-const fallbackImage = "https://via.placeholder.com/640x360?text=No+Image";
+
+const fallbackImage = fallbackImageSrc;
 
 const formatCurrency = (amount?: number) => {
   if (typeof amount !== "number" || Number.isNaN(amount)) return "-";
