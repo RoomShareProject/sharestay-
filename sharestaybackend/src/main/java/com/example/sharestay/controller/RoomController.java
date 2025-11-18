@@ -24,29 +24,20 @@ public class RoomController {
 
     private final RoomService roomService;
 
-    // 방 등록
-    @Operation(summary = "방 등록", description = "호스트가 새로운 방을 등록합니다.")
-    @PostMapping(value = "/api/rooms", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<RoomResponse> createRoom(@ModelAttribute RoomRequest request) {
-        RoomResponse response = roomService.createRoom(request);
+    // 방 등록 (텍스트 + 이미지 파일 같이 받기)
+    @Operation(summary = "방 등록", description = "호스트가 방 정보를 입력하고 이미지를 업로드합니다.")
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<RoomResponse> createRoom(
+            @ModelAttribute RoomRequest request,        // 제목/가격/주소 등
+            @RequestPart(required = false) List<MultipartFile> files  // 이미지 리스트
+    ) {
+        RoomResponse response = roomService.createRoom(request, files);
         return ResponseEntity.ok(response);
     }
 
-    // 메인 화면용 간단 검색
-    @Operation(summary = "메인 추천용 간단 검색", description = "지역 키워드 기반으로 간단 검색을 수행합니다.")
-    @GetMapping("/search/simple")
-    public ResponseEntity<List<RoomResponse>> simpleSearch(
-            @RequestParam(defaultValue = "") String region
-    ) {
-        return ResponseEntity.ok(
-                roomService.searchRooms(region, null, null, null, null)
-        );
-    }
-
-    // 필터 검색
-    @Operation(summary = "필터 검색", description = "지역/타입/가격/옵션 필터를 적용한 검색을 수행합니다.")
-    @GetMapping("/search/filter")
-    public ResponseEntity<List<RoomResponse>> filterSearch(
+    // 메인 화면 간단 검색과 필터 검색 통합
+    @GetMapping("/search")
+    public ResponseEntity<List<RoomResponse>> searchRooms(
             @RequestParam(required = false) String region,
             @RequestParam(required = false) String type,
             @RequestParam(required = false) Double minPrice,
@@ -100,14 +91,6 @@ public class RoomController {
         return ResponseEntity.ok(roomService.getRoomDetail(roomId));
     }
 
-
-    // 방 상세 조회 이거 수정해야함
-//    @Operation(summary = "방 상세 조회", description = "사용자가 특정 방의 상세 정보를 조회합니다.")
-//    @GetMapping("/rooms/{roomId}")
-//    public ResponseEntity<RoomResponse> getRoomById(@PathVariable Long roomId) {
-//        RoomResponse response = roomService.getRoomById(roomId);
-//        return ResponseEntity.ok(response);
-//    }
 
 
 

@@ -37,51 +37,39 @@ public class RoomService {
         Host host = hostRepository.findById(request.getHostId())
                 .orElseThrow(() -> new IllegalArgumentException("Host not found"));
 
-        Room room = new Room(
-                host,
-                request.getTitle(),
-                request.getRentPrice(),
-                request.getAddress(),
-                request.getType(),
-                request.getLatitude(),
-                request.getLongitude(),
-                request.getAvailabilityStatus(),
-                request.getDescription()
-        );
+        Room room = request.toEntity(host);
 
         // 이미지 업로드 및 RoomImage 엔티티 생성
-        if (request.getImages() != null && !request.getImages().isEmpty()) {
-            for (MultipartFile file : request.getImages()) {
-                // 🔹 Firebase 업로드 (임시로 URL만 가정)
-                String imageUrl = firebaseService.uploadFile(file);  // 실제 구현 시 사용
-                // String imageUrl = "https://dummy.com/" + file.getOriginalFilename(); // 테스트용
+        if (files != null && !files.isEmpty()) {
+            for (MultipartFile file : files) {
+                String imageUrl = firebaseService.uploadFile(file);
 
                 RoomImage image = new RoomImage();
                 image.setRoom(room);
                 image.setImageUrl(imageUrl);
-                room.getRoomImages().add(image);   // 위에서 room이 생성될 때 같이 생성 될 건데 image.setUrl만 하면 되는 거 아니니..
+                room.getRoomImages().add(image);
             }
         }
 
-        // DB에 저장 (cascade.ALL 덕분에 RoomImage도 자동 저장)
+        // Room + RoomImages 저장
         Room saved = roomRepository.save(room);
 
-        // 반환 DTO 생성
-        return new RoomResponse(
-                saved.getId(),
-                saved.getTitle(),
-                saved.getRentPrice(),
-                saved.getAddress(),
-                saved.getType(),
-                saved.getAvailabilityStatus(),
-                saved.getDescription(),
-                saved.getRoomImages().stream()
-                        .map(img -> new RoomImageResponse(img.getId(), img.getImageUrl()))
-                        .collect(Collectors.toList()),
-                saved.getShareLink() != null ? saved.getShareLink().getLinkUrl() : null
-        );
+        Room savedRoom = roomRepository.save(room);
+
+        return toResponse(savedRoom);
+
+
+//        // DTO 변환
+//        List<RoomImageResponse> imageResponses = saved.getRoomImages().stream()
+//                .map(img -> new RoomImageResponse(img.getId(), img.getImageUrl()))
+//                .collect(Collectors.toList());
+//
+//        String shareLinkUrl = saved.getShareLink() != null
+//                ? saved.getShareLink().getLinkUrl()
+//                : null;
 
     }
+
 
     // 방 검색
     // 검색 service 로직은 하나로 작성하고 controller에서 나눌 것임
@@ -129,15 +117,6 @@ public class RoomService {
         roomRepository.delete(room);
     }
 
-    // 방 검색  (단일 조회용으로만 쓰이는데, 필터/검색 결과에서는 여러 개의 방을 리스트로 가져와야 하므로 이 메서드는 필요없음
-//    @Transactional(readOnly = true)
-//    public RoomResponse getRoomById(Long roomId) {
-//        Room room = roomRepository.findById(roomId)
-//                .orElseThrow(() -> new IllegalArgumentException("Room not found"));
-//
-//        return toResponse(room);
-//    }
-
     @Transactional(readOnly = true)
     public List<RoomResponse> getRoomList() {
         return roomRepository.findAll()   // 전체 조회 or 나중에 필터 조건 추가 가능
@@ -152,10 +131,10 @@ public class RoomService {
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new IllegalArgumentException("Room not found"));
 
-        // 이미지 URL을 방 이미지 엔티티/리포지토리에서 가져왔다고 가정
+        // RoomImageRepository 이용해서 이미지 URL 조회
         List<String> imageUrls = roomImageRepository.findByRoomId(roomId)
                 .stream()
-                .map(img -> img.getImageUrl())
+                .map(RoomImage::getImageUrl)
                 .collect(Collectors.toList());
 
         String shareLinkUrl = room.getShareLink() != null
@@ -176,6 +155,7 @@ public class RoomService {
                 shareLinkUrl
         );
     }
+
 
     // 공통 변환 메서드 (Entity → DTO)
     private RoomResponse toResponse(Room room) {

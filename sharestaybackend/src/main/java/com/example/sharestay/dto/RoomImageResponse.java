@@ -5,8 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Data
-//@Builder
+@Data  // Getter 때문에 넣어둠
 @NoArgsConstructor
 @AllArgsConstructor
 public class RoomImageResponse {
