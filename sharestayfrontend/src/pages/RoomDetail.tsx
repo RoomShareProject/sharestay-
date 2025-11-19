@@ -23,8 +23,6 @@ import type {
 } from "../types/room";
 import { mapRoomFromApi, resolveRoomImageUrl } from "../types/room";
 import fallbackImageSrc from "../img/no_img.jpg";
-import RoomMap from "../components/RoomMap";
-
 
 const fallbackImage = fallbackImageSrc;
 

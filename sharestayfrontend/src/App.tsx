@@ -77,6 +77,7 @@ function App() {
             <Route path="/guide" element={<Guide />} />
             <Route path="/rooms" element={<Rooms />} />
             <Route path="/rooms/:roomId" element={<RoomDetail />} />
+            <Route path="/RoomMap" element={<RoomMap />} />
             <Route
               path="/list-room"
               element={

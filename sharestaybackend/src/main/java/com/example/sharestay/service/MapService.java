@@ -35,8 +35,10 @@ public class MapService {
 
     // 특정 좌표 기준 근처 방 조회 (거리 km 기준)
     public List<MapDto> getRoomsNearLocation(double userLat, double userLng, double radiusKm) {
-        return roomRepository.findAll().stream()
-                .filter(room -> calcDistance(userLat, userLng, room.getLatitude(), room.getLongitude()) <= radiusKm)
+        // DB에서 직접 필터링된 결과를 가져옵니다.
+        List<Room> rooms = roomRepository.findRoomsNearLocation(userLat, userLng, radiusKm);
+
+        return rooms.stream()
                 .map(room -> MapDto.builder()
                         .roomId(room.getId())
                         .title(room.getTitle())
