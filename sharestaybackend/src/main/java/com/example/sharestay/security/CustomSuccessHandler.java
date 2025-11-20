@@ -8,8 +8,10 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 
@@ -17,16 +19,19 @@ import java.io.IOException;
 @Slf4j       // 로그 찍을 수 있게 Lombok 사용
 public class CustomSuccessHandler implements AuthenticationSuccessHandler {
 
-    private final JwtService jwtService;           // JWT 토큰 생성 서비스
-    private final UserRepository userRepository;   // 유저 조회/저장 레포지토리
+    private final JwtService jwtService;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Value("${oauth2.success.redirect-url}")      // 로그인 성공 후 리다이렉트할 프론트 URL
     private String redirectUrl;
 
-    // 생성자: DI(의존성 주입)로 JwtService와 UserRepository 주입
-    public CustomSuccessHandler(JwtService jwtService, UserRepository userRepository) {
+    public CustomSuccessHandler(JwtService jwtService,
+                                UserRepository userRepository,
+                                PasswordEncoder passwordEncoder) {
         this.jwtService = jwtService;
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     // 로그인 성공 시 호출되는 메서드
@@ -40,18 +45,23 @@ public class CustomSuccessHandler implements AuthenticationSuccessHandler {
         // 1️⃣ 인증 객체에서 이메일 가져오기
         String email = authentication.getName();   // 구글 로그인 시 이메일 반환
 
-        // 2️⃣ DB에서 유저 조회, 없으면 새로 생성
-        User user = userRepository.findByUsername(email)
-                .orElseGet(() -> userRepository.save(User.createGoogleUser(email)));
+        userRepository.findByUsername(email)
+                .orElseGet(() -> {
+                    String encodedPassword = passwordEncoder.encode(UUID.randomUUID().toString());
+                    return userRepository.save(User.createGoogleUser(email, encodedPassword));
+                });
 
         // 3️⃣ JWT Access Token과 Refresh Token 생성
         String accessToken = jwtService.generateAccessToken(email);
         String refreshToken = jwtService.generateRefreshToken(email);
 
-        // 4️⃣ 리다이렉트 URL에 토큰 붙이기
-        String redirectWithToken = redirectUrl +
-                "?accessToken=" + accessToken +
-                "&refreshToken=" + refreshToken;
+        String redirectWithToken = UriComponentsBuilder
+                .fromHttpUrl(redirectUrl)
+                .queryParam("accessToken", accessToken)
+                .queryParam("refreshToken", refreshToken)
+                .queryParam("username", email)
+                .build(true)
+                .toUriString();
 
         // 5️⃣ 프론트 페이지로 리다이렉트
         response.sendRedirect(redirectWithToken);
