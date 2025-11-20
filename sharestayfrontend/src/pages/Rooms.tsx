@@ -1,4 +1,4 @@
-﻿// src/pages/Rooms.tsx
+﻿﻿// src/pages/Rooms.tsx
 import type { AxiosError } from "axios";
 import {
   Box,
@@ -394,7 +394,7 @@ export default function Rooms() {
           </Paper>
 
           <Grid container spacing={4}>
-            <Grid size={{ xs: 12, md: 3 }}>
+            <Grid item xs={12} md={3}>
               <Paper
                 sx={{
                   p: 3,
@@ -469,7 +469,7 @@ export default function Rooms() {
                 </Stack>
               </Paper>
             </Grid>
-            <Grid size={{ xs: 12, md: 9 }}>
+            <Grid item xs={12} md={9}>
               <Stack spacing={3}>
                 <Stack
                   direction={{ xs: "column", sm: "row" }}
@@ -538,7 +538,7 @@ export default function Rooms() {
                         room.images?.[0]?.imageUrl ?? fallbackImage;
                       return (
                         <Grid
-                          size={{ xs: 12, sm: 6 }}
+                          item xs={12} sm={6}
                           key={roomId ?? `${room.title}-${room.address}`}
                           ref={
                             isHighlighted ? highlightedCardRef : undefined
