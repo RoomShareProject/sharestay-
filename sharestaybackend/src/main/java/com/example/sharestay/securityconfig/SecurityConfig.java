@@ -1,6 +1,8 @@
 package com.example.sharestay.securityconfig;
 
+import com.example.sharestay.security.CustomSuccessHandler;
 import com.example.sharestay.security.JwtAuthenticationFilter;
+import com.example.sharestay.service.CustomUserService;
 import com.example.sharestay.service.JwtService;
 import com.example.sharestay.service.UserDetailsServiceImpl;
 import java.util.List;
@@ -16,7 +18,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -31,22 +32,25 @@ public class SecurityConfig {
     private final UserDetailsServiceImpl userDetailsService;
     private final JwtService jwtService;
     private final ObjectProvider<ClientRegistrationRepository> clientRegistrationRepositoryProvider;
+    private final CustomUserService customUserService;
+    private final CustomSuccessHandler customSuccessHandler;
 
-    public SecurityConfig(UserDetailsServiceImpl userDetailsService,
-                          JwtService jwtService,
-                          ObjectProvider<ClientRegistrationRepository> clientRegistrationRepositoryProvider) {
+    public SecurityConfig(
+            UserDetailsServiceImpl userDetailsService,
+            JwtService jwtService,
+            ObjectProvider<ClientRegistrationRepository> clientRegistrationRepositoryProvider,
+            CustomUserService customUserService,
+            CustomSuccessHandler customSuccessHandler
+    ) {
         this.userDetailsService = userDetailsService;
         this.jwtService = jwtService;
         this.clientRegistrationRepositoryProvider = clientRegistrationRepositoryProvider;
+        this.customUserService = customUserService;
+        this.customSuccessHandler = customSuccessHandler;
     }
 
     public void configGlobal(AuthenticationManagerBuilder auth) throws Exception {
         auth.userDetailsService(userDetailsService).passwordEncoder(new BCryptPasswordEncoder());
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
     }
 
     @Bean
@@ -60,7 +64,7 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(List.of("http://localhost:5173"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
-        configuration.setExposedHeaders(List.of("Authorization"));
+        configuration.setExposedHeaders(List.of("Authorization", "Refresh-Token"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -81,10 +85,12 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/api/favorites/**"
+                                "/swagger-ui.html"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.POST,"/api/favorites/**").permitAll()
+                        .requestMatchers(HttpMethod.GET,"/api/map/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/statistics/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/auth/google").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/rooms/**").permitAll()
@@ -97,6 +103,13 @@ public class SecurityConfig {
                 )
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
+
+                .oauth2Login(oauth -> oauth
+                        .userInfoEndpoint(userInfo ->
+                                userInfo.userService(customUserService)
+                        )
+                        .successHandler(customSuccessHandler)
+                )
                 // JWT 인증 필터를 UsernamePasswordAuthenticationFilter 앞에 등록
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
