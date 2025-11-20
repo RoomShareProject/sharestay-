@@ -115,7 +115,7 @@ public class SecurityConfig {
 
         return http.build();
 
-        // 파이어베이스 테스트용
+        // 파이어베이스 테스트용 (지우지 마세요.)
 //        http
 //                .csrf(csrf -> csrf.disable())
 //                .cors(cors -> cors.disable())  // 테스트용 CORS 풀기
