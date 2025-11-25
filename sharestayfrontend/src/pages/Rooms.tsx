@@ -29,13 +29,21 @@ import {
   Search,
 } from "@mui/icons-material";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link as RouterLink, useSearchParams } from "react-router-dom";
+import {
+  Link as RouterLink,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
 import SiteFooter from "../components/SiteFooter";
 import SiteHeader from "../components/SiteHeader";
 import { api } from "../lib/api";
 import { fetchFavoriteRooms, toggleFavoriteRoom } from "../lib/favorites";
-import type { RoomApiResponse, RoomSummary, ShareLinkResponse } from "../types/room";
+import type {
+  RoomApiResponse,
+  RoomSummary,
+  ShareLinkResponse,
+} from "../types/room";
 import { mapRoomFromApi } from "../types/room";
 import fallbackImageSrc from "../img/no_img.jpg";
 
@@ -68,7 +76,6 @@ const roomTypes = [
 ];
 
 const fallbackImage = fallbackImageSrc;
-
 
 const formatCurrency = (amount?: number) => {
   if (typeof amount !== "number" || Number.isNaN(amount)) return "-";
@@ -109,7 +116,6 @@ const availabilityLabel = (status: RoomSummary["availabilityStatus"]) => {
   return "모집중";
 };
 
-
 const getRoomId = (room: RoomSummary) => room.roomId ?? room.id ?? null;
 
 type RoomSearchOverrides = {
@@ -121,8 +127,7 @@ type RoomSearchOverrides = {
 
 export default function Rooms() {
   const { user } = useAuth();
-  const canCreateShareLink =
-    user?.role === "HOST" || user?.role === "ADMIN";
+  const canCreateShareLink = user?.role === "HOST" || user?.role === "ADMIN";
   const [searchParams, setSearchParams] = useSearchParams();
   const highlightParam = searchParams.get("highlight");
   const highlightedRoomId = (() => {
@@ -140,6 +145,7 @@ export default function Rooms() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
+  const navigate = useNavigate();
 
   const priceLabel = useMemo(
     () =>
@@ -160,21 +166,24 @@ export default function Rooms() {
       const hasCustomPriceRange =
         priceRangeValue[0] !== defaultPriceRange[0] ||
         priceRangeValue[1] !== defaultPriceRange[1];
-      const { data } = await api.get<RoomApiResponse[]>("/rooms/search/filter", {
-        params: {
-          region: regionParam,
-          type: roomTypeValue || undefined,
-          minPrice:
-            hasCustomPriceRange && Number.isFinite(minPrice)
-              ? minPrice
-              : undefined,
-          maxPrice:
-            hasCustomPriceRange && Number.isFinite(maxPrice)
-              ? maxPrice
-              : undefined,
-          option: keywordValue || undefined,
-        },
-      });
+      const { data } = await api.get<RoomApiResponse[]>(
+        "/rooms/search/filter",
+        {
+          params: {
+            region: regionParam,
+            type: roomTypeValue || undefined,
+            minPrice:
+              hasCustomPriceRange && Number.isFinite(minPrice)
+                ? minPrice
+                : undefined,
+            maxPrice:
+              hasCustomPriceRange && Number.isFinite(maxPrice)
+                ? maxPrice
+                : undefined,
+            option: keywordValue || undefined,
+          },
+        }
+      );
       const list = Array.isArray(data) ? data.map(mapRoomFromApi) : [];
       const normalized = list.map((room) => {
         const roomId = getRoomId(room);
@@ -204,8 +213,7 @@ export default function Rooms() {
     const maxParam = searchParams.get("maxPrice");
     const parsedMin = minParam ? Number(minParam) : NaN;
     const parsedMax = maxParam ? Number(maxParam) : NaN;
-    const hasCustomRange =
-      !Number.isNaN(parsedMin) && !Number.isNaN(parsedMax);
+    const hasCustomRange = !Number.isNaN(parsedMin) && !Number.isNaN(parsedMax);
     const nextRange = hasCustomRange ? [parsedMin, parsedMax] : undefined;
 
     if (initialKeyword) setKeyword(initialKeyword);
@@ -253,9 +261,7 @@ export default function Rooms() {
   const loadFavorites = useCallback(async () => {
     if (!user?.id) {
       setFavorites(new Set());
-      setRooms((prev) =>
-        prev.map((room) => ({ ...room, isFavorite: false }))
-      );
+      setRooms((prev) => prev.map((room) => ({ ...room, isFavorite: false })));
       return;
     }
     try {
@@ -301,7 +307,9 @@ export default function Rooms() {
     });
     setRooms((prev) =>
       prev.map((item) =>
-        getRoomId(item) === roomId ? { ...item, isFavorite: !currentlyFavorite } : item
+        getRoomId(item) === roomId
+          ? { ...item, isFavorite: !currentlyFavorite }
+          : item
       )
     );
     try {
@@ -320,7 +328,9 @@ export default function Rooms() {
       });
       setRooms((prev) =>
         prev.map((item) =>
-          getRoomId(item) === roomId ? { ...item, isFavorite: currentlyFavorite } : item
+          getRoomId(item) === roomId
+            ? { ...item, isFavorite: currentlyFavorite }
+            : item
         )
       );
       alert("즐겨찾기 처리에 실패했습니다. 다시 시도해 주세요.");
@@ -329,7 +339,9 @@ export default function Rooms() {
 
   const fetchShareLink = async (roomId: number): Promise<string | null> => {
     try {
-      const { data } = await api.get<ShareLinkResponse>(`/rooms/${roomId}/share`);
+      const { data } = await api.get<ShareLinkResponse>(
+        `/rooms/${roomId}/share`
+      );
       return data?.linkUrl ?? null;
     } catch (err) {
       const status = (err as AxiosError)?.response?.status;
@@ -344,10 +356,14 @@ export default function Rooms() {
       let link = await fetchShareLink(roomId);
       if (!link) {
         if (!canCreateShareLink) {
-          alert("공유 링크가 아직 생성되지 않았습니다. 호스트 또는 관리자만 생성할 수 있습니다.");
+          alert(
+            "공유 링크가 아직 생성되지 않았습니다. 호스트 또는 관리자만 생성할 수 있습니다."
+          );
           return;
         }
-        const { data } = await api.post<ShareLinkResponse>(`/rooms/${roomId}/share`);
+        const { data } = await api.post<ShareLinkResponse>(
+          `/rooms/${roomId}/share`
+        );
         link = data?.linkUrl ?? null;
       }
 
@@ -373,8 +389,6 @@ export default function Rooms() {
       alert(message);
     }
   };
-
-
 
   return (
     <Box sx={{ bgcolor: "#f4f6fb", minHeight: "100vh" }}>
@@ -492,7 +506,14 @@ export default function Rooms() {
                     </Typography>
                   </Stack>
 
-                      <RouterLink to="/RoomMap">지도로 찾기</RouterLink>
+                  <Button
+                    variant="outlined"
+                    fullWidth
+                    onClick={() => navigate("/RoomMap")}
+                    sx={{ borderRadius: 2 }}
+                  >
+                    지도로 찾기
+                  </Button>
                   <Stack spacing={1}>
                     <Typography variant="subtitle2" color="text.secondary">
                       편의시설
@@ -587,9 +608,7 @@ export default function Rooms() {
                         <Grid
                           size={{ xs: 12, sm: 6 }}
                           key={roomId ?? `${room.title}-${room.address}`}
-                          ref={
-                            isHighlighted ? highlightedCardRef : undefined
-                          }
+                          ref={isHighlighted ? highlightedCardRef : undefined}
                         >
                           <Card
                             sx={{
