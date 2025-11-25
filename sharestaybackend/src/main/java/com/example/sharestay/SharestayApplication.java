@@ -16,6 +16,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 @SpringBootApplication
 @RequiredArgsConstructor
 public class SharestayApplication implements CommandLineRunner {
@@ -68,141 +73,69 @@ public class SharestayApplication implements CommandLineRunner {
                 "깔끔하고 교통 좋은 원룸입니다."      // description
         );
 
-        Room room1 = new Room(
-                host1,
-                "서면역 도보 3분 깔끔한 원룸",
-                48.0,
-                "부산광역시 부산진구 부전동 123-1",
-                "OFFICETEL",
-                35.157842,
-                129.059314,
-                2,
-                "서면역과 가까워 교통이 편리한 깔끔한 원룸입니다."
-        );
 
-        Room room2 = new Room(
-                host1,
-                "서면 젊음의거리 접근성 좋은 원룸",
-                52.5,
-                "부산광역시 부산진구 부전동 98-4",
-                "ETC",
-                35.156912,
-                129.060128,
-                1,
-                "서면 젊음의거리 인근에 위치한 조용한 원룸입니다."
-        );
+        List<Room> roomList = new ArrayList<>();
 
-        Room room3 = new Room(
-                host1,
-                "전포카페거리 근처 조용한 투룸",
-                62.0,
-                "부산광역시 부산진구 전포동 310-22",
-                "APARTMENT",
-                35.154234,
-                129.064512,
-                3,
-                "전포카페거리와 가까우면서도 조용한 투룸입니다."
-        );
+        // 부산 전역 구 + 동 + 랜덤 위도/경도 범위
+        Map<String, Object[]> REGION_DATA = new HashMap<>() {{
+            put("부산진구", new Object[]{"부전동,전포동,가야동,당감동".split(","), 35.149, 35.175, 129.040, 129.070});
+            put("해운대구", new Object[]{"우동,중동,좌동,송정동".split(","), 35.155, 35.230, 129.110, 129.190});
+            put("동래구", new Object[]{"명륜동,온천동,사직동".split(","), 35.185, 35.215, 129.060, 129.100});
+            put("남구", new Object[]{"대연동,용호동,문현동".split(","), 35.120, 35.150, 129.070, 129.105});
+            put("수영구", new Object[]{"민락동,광안동,남천동".split(","), 35.135, 35.170, 129.100, 129.130});
+            put("북구", new Object[]{"구포동,덕천동,화명동".split(","), 35.205, 35.265, 128.990, 129.030});
+            put("사상구", new Object[]{"감전동,덕포동,주례동".split(","), 35.140, 35.180, 128.980, 129.020});
+            put("사하구", new Object[]{"하단동,신평동,장림동".split(","), 35.070, 35.110, 128.960, 129.010});
+            put("강서구", new Object[]{"명지동,신호동,대저동".split(","), 35.085, 35.210, 128.810, 128.960});
+            put("연제구", new Object[]{"연산동".split(","), 35.170, 35.205, 129.060, 129.090});
+            put("동구", new Object[]{"초량동,수정동".split(","), 35.125, 35.150, 129.040, 129.065});
+            put("서구", new Object[]{"부민동,아미동".split(","), 35.085, 35.130, 129.010, 129.040});
+            put("영도구", new Object[]{"봉래동,영선동".split(","), 35.060, 35.100, 129.040, 129.080});
+            put("중구", new Object[]{"남포동,광복동".split(","), 35.095, 35.115, 129.025, 129.040});
+            put("금정구", new Object[]{"장전동,구서동".split(","), 35.230, 35.285, 129.055, 129.110});
+            put("기장군", new Object[]{"정관읍,일광읍,기장읍".split(","), 35.235, 35.330, 129.170, 129.260});
+        }};
 
-        Room room4 = new Room(
-                host1,
-                "서면몰 인근 저렴한 원룸",
-                45.0,
-                "부산광역시 부산진구 부전동 201-15",
-                "ONE_ROOM",
-                35.158322,
-                129.058112,
-                1,
-                "합리적인 가격의 서면 인근 원룸입니다."
-        );
+        String[] TYPES = {"ONE_ROOM", "TWO_ROOM", "OFFICETEL", "APARTMENT"};
 
-        Room room5 = new Room(
-                host1,
-                "서면 로데오거리 근처 신축 원룸",
-                57.0,
-                "부산광역시 부산진구 부전동 77-9",
-                "OFFICETEL",
-                35.159101,
-                129.061442,
-                2,
-                "신축이라 내부가 매우 깨끗한 원룸입니다."
-        );
+        for (int i = 1; i <= 200; i++) {
+            // 🔥 랜덤 구 선택
+            List<String> keys = new ArrayList<>(REGION_DATA.keySet());
+            String gu = keys.get((int) (Math.random() * keys.size()));
 
-        Room room6 = new Room(
-                host1,
-                "서면역 1번출구 바로 앞 원룸",
-                58.3,
-                "부산광역시 부산진구 부전동 134-8",
-                "TWO_ROOM",
-                35.157122,
-                129.058791,
-                2,
-                "역세권에 특화된 최상의 위치를 가진 원룸입니다."
-        );
+            Object[] regionInfo = REGION_DATA.get(gu);
 
-        Room room7 = new Room(
-                host1,
-                "전포역 사이, 접근성 좋은 투룸",
-                65.0,
-                "부산광역시 부산진구 전포동 295-4",
-                "APARTMENT",
-                35.155842,
-                129.062931,
-                3,
-                "전포역과 서면역 사이에 있어 접근성이 뛰어납니다."
-        );
+            String[] dongs = (String[]) regionInfo[0];
+            double minLat = (double) regionInfo[1];
+            double maxLat = (double) regionInfo[2];
+            double minLng = (double) regionInfo[3];
+            double maxLng = (double) regionInfo[4];
 
-        Room room8 = new Room(
-                host1,
-                "서면시장 근처 저렴한 원룸",
-                43.5,
-                "부산광역시 부산진구 부전동 54-12",
-                "ONE_ROOM",
-                35.158549,
-                129.057466,
-                1,
-                "서면시장 근처의 조용한 원룸입니다."
-        );
+            String dong = dongs[(int) (Math.random() * dongs.length)];
 
-        Room room9 = new Room(
-                host1,
-                "서면역 도보 3분 깔끔한 원룸",
-                48.0,
-                "부산광역시 부산진구 부전동 123-1",
-                "TWO_ROOM",
-                35.157842,
-                129.059314,
-                2,
-                "서면역과 가까워 교통이 편리한 깔끔한 원룸입니다."
-        );
+            double lat = minLat + Math.random() * (maxLat - minLat);
+            double lng = minLng + Math.random() * (maxLng - minLng);
 
-        Room room10 = new Room(
-                host1,
-                "서면역 도보 3분 깔끔한 원룸",
-                48.0,
-                "부산광역시 부산진구 부전동 123-1",
-                "TWO_ROOM",
-                35.157842,
-                129.059314,
-                2,
-                "서면역과 가까워 교통이 편리한 깔끔한 원룸입니다."
-        );
+            String type = TYPES[(int) (Math.random() * TYPES.length)];
 
+            Room room1 = new Room(
+                    host1,
+                    gu + " " + dong + " 랜덤 방 " + i,
+                    300000 + (int)(Math.random() * 900000),
+                    "부산광역시 " + gu + " " + dong + " " + i + "-1",
+                    type,
+                    lat,
+                    lng,
+                    1 + (int)(Math.random() * 3),
+                    "부산 전역 랜덤 더미 데이터입니다."
+            );
 
-
+            roomList.add(room1);
+        }
         hostRepository.save(host1);
         roomRepository.save(room);
 
-        roomRepository.save(room1);
-        roomRepository.save(room2);
-        roomRepository.save(room3);
-        roomRepository.save(room4);
-        roomRepository.save(room5);
-        roomRepository.save(room6);
-        roomRepository.save(room7);
-        roomRepository.save(room8);
-        roomRepository.save(room9);
-        roomRepository.save(room10);
+        roomRepository.saveAll(roomList);
 
         // Favorite 객체 생성
         Favorite favorite = new Favorite();
