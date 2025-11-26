@@ -22,11 +22,12 @@ import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 
 interface BanRecord {
-  id: number;
+  banId: number;
+  userId: number;
   reason: string;
   bannedAt: string;
-  endDate?: string;
-  memo?: string;
+  endDate?: string | null;
+  memo?: string | null;
   isActive: boolean;
 }
 
@@ -44,7 +45,7 @@ export default function AdminBans() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [reason, setReason] = useState("");
-  const [endDate, setEndDate] = useState<string | undefined>(undefined);
+  const [endDate, setEndDate] = useState<string>("");
   const [memo, setMemo] = useState("");
 
   const fetchUsers = async () => {
@@ -54,23 +55,20 @@ export default function AdminBans() {
 
   const fetchBanRecords = async (userId: number) => {
     setLoading(true);
-    const { data } = await api.get<BanRecord[]>(`/bans/users/${userId}`);
-    setBanRecords(data);
-    setLoading(false);
+    try {
+      const { data } = await api.get<BanRecord[]>(`/bans/users/${userId}`);
+      setBanRecords(data);
+    } catch (err) {
+      alert("정지 기록을 불러오는 중 오류가 발생했습니다.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // 날짜 및 시간 형식을 안전하게 변환하는 헬퍼 함수
-  const formatDateTime = (dateString?: string | null) => {
-    if (!dateString) return "-";
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) { // 유효하지 않은 날짜인 경우
-        return "-";
-      }
-      return date.toLocaleString();
-    } catch (e) {
-      return "-"; // 변환 중 오류 발생 시
-    }
+  const formatDateTime = (value?: string | null) => {
+    if (!value) return "-";
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? "-" : date.toLocaleString();
   };
 
   useEffect(() => {
@@ -94,7 +92,6 @@ export default function AdminBans() {
 
   const handleBanSubmit = async () => {
     if (!selectedUserId) return;
-
     try {
       await api.post(`/bans/users/${selectedUserId}`, {
         reason,
@@ -108,10 +105,10 @@ export default function AdminBans() {
     }
   };
 
-  const handleUnban = async (banId: number) => {
+  const handleUnban = async () => {
     if (!selectedUserId) return;
     try {
-      await api.delete(`/bans/${banId}`);
+      await api.delete(`/bans/users/${selectedUserId}`);
       void fetchBanRecords(selectedUserId);
     } catch (err) {
       alert("정지 해제 중 오류가 발생했습니다.");
@@ -145,14 +142,16 @@ export default function AdminBans() {
         </Stack>
 
         <TextField
-            select
-            label="사용자 선택"
-            value={selectedUserId ?? ""}
-            onChange={(e) => setSelectedUserId(Number(e.target.value))}
-            sx={{ mb: 2, minWidth: 240 }}
-            size="small"
-          >
-          <MenuItem value=""><em>선택하세요</em></MenuItem>
+          select
+          label="사용자 선택"
+          value={selectedUserId ?? ""}
+          onChange={(e) => setSelectedUserId(Number(e.target.value))}
+          sx={{ mb: 2, minWidth: 240 }}
+          size="small"
+        >
+          <MenuItem value="">
+            <em>선택하세요</em>
+          </MenuItem>
           {users.map((user) => (
             <MenuItem key={user.id} value={user.id}>
               {user.nickname ?? user.username} ({user.username})
@@ -179,7 +178,7 @@ export default function AdminBans() {
               </TableHead>
               <TableBody>
                 {banRecords.map((ban) => (
-                  <TableRow key={ban.id}>
+                  <TableRow key={ban.banId}>
                     <TableCell>{ban.reason}</TableCell>
                     <TableCell>{formatDateTime(ban.bannedAt)}</TableCell>
                     <TableCell>{formatDateTime(ban.endDate)}</TableCell>
@@ -187,7 +186,9 @@ export default function AdminBans() {
                     <TableCell>
                       {ban.isActive ? (
                         <Chip label="활성" color="error" size="small" />
-                      ) : (<Chip label="해제" size="small" />)}
+                      ) : (
+                        <Chip label="해제" size="small" />
+                      )}
                     </TableCell>
                     <TableCell align="right">
                       {ban.isActive && (
@@ -195,7 +196,7 @@ export default function AdminBans() {
                           variant="outlined"
                           color="error"
                           size="small"
-                          onClick={() => handleUnban(ban.id)}
+                          onClick={handleUnban}
                         >
                           정지 해제
                         </Button>
@@ -209,7 +210,6 @@ export default function AdminBans() {
         </Box>
       </Paper>
 
-      {/* 정지 등록 다이얼로그 */}
       <Dialog open={dialogOpen} onClose={handleCloseDialog}>
         <DialogTitle>사용자 정지 등록</DialogTitle>
         <DialogContent>
@@ -221,9 +221,9 @@ export default function AdminBans() {
               fullWidth
             />
             <TextField
-              label="종료일 (선택)"
+              label="종료일(선택)"
               type="datetime-local"
-              value={endDate ?? ""}
+              value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
               fullWidth
             />

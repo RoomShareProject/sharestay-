@@ -2,9 +2,11 @@ package com.example.sharestay.securityconfig;
 
 import com.example.sharestay.security.CustomSuccessHandler;
 import com.example.sharestay.security.JwtAuthenticationFilter;
+import com.example.sharestay.service.BanService;
 import com.example.sharestay.service.CustomUserService;
 import com.example.sharestay.service.JwtService;
 import com.example.sharestay.service.UserDetailsServiceImpl;
+import com.example.sharestay.repository.UserRepository;
 import java.util.List;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
@@ -35,19 +37,25 @@ public class SecurityConfig {
     private final ObjectProvider<ClientRegistrationRepository> clientRegistrationRepositoryProvider;
     private final CustomUserService customUserService;
     private final CustomSuccessHandler customSuccessHandler;
+    private final BanService banService;
+    private final UserRepository userRepository;
 
     public SecurityConfig(
             UserDetailsServiceImpl userDetailsService,
             JwtService jwtService,
             ObjectProvider<ClientRegistrationRepository> clientRegistrationRepositoryProvider,
             CustomUserService customUserService,
-            CustomSuccessHandler customSuccessHandler
+            CustomSuccessHandler customSuccessHandler,
+            BanService banService,
+            UserRepository userRepository
     ) {
         this.userDetailsService = userDetailsService;
         this.jwtService = jwtService;
         this.clientRegistrationRepositoryProvider = clientRegistrationRepositoryProvider;
         this.customUserService = customUserService;
         this.customSuccessHandler = customSuccessHandler;
+        this.banService = banService;
+        this.userRepository = userRepository;
     }
 
     public void configGlobal(AuthenticationManagerBuilder auth) throws Exception {
@@ -279,7 +287,7 @@ public class SecurityConfig {
     @Bean
     @Order(2) // publicEndpointsFilterChain 다음에 실행됩니다.
     public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
-        JwtAuthenticationFilter jwtFilter = new JwtAuthenticationFilter(jwtService, userDetailsService);
+        JwtAuthenticationFilter jwtFilter = new JwtAuthenticationFilter(jwtService, userDetailsService, banService, userRepository);
 
         http
                 // 이 필터 체인으로 들어온 모든 요청에 대해 경로별 규칙을 적용합니다.
