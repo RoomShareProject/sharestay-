@@ -113,15 +113,17 @@ const RoomMap: React.FC = () => {
               latitude,
               longitude
             );
+            const userPosition = new window.kakao.maps.LatLng(
+              latitude,
+              longitude
+            );
 
-            // 2. 지도 생성 및 중심 설정
             const map = new window.kakao.maps.Map(mapContainer, {
               center: userPosition,
               level: 5,
             });
             mapInstanceRef.current = map; // 생성된 지도 인스턴스를 ref에 저장
 
-            // 현재 위치에 특별한 마커 표시
             new window.kakao.maps.Marker({
               map,
               position: userPosition,
@@ -155,7 +157,7 @@ const RoomMap: React.FC = () => {
               center: defaultPosition,
               level: 5,
             });
-            mapInstanceRef.current = map; // 생성된 지도 인스턴스를 ref에 저장
+            mapInstanceRef.current = map;
 
             // 4. 지도 이동이 멈추면 주변 방 데이터를 다시 불러오는 이벤트 리스너 추가
             window.kakao.maps.event.addListener(map, "idle", () => {
@@ -441,7 +443,7 @@ const RoomMap: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedRoomId, hoveredRoomId, rooms]); // rooms가 변경될 때도 원을 다시 그려야 할 수 있음
 
-  // 지도 컨테이너의 크기 변경을 감지하고 relayout을 호출하는 useEffect
+  // 지도 컨테이너 resize 대응
   useEffect(() => {
     const mapContainer = mapRef.current;
     if (!mapContainer) return;
@@ -833,6 +835,8 @@ const RoomMap: React.FC = () => {
           </Box>
         </Modal>
       </Box>
+      {/* 필요하면 나중에 지도 아래에 리스트 붙일 수 있음 */}
+      {/* <SiteFooter /> */}
     </Box>
   );
 };
