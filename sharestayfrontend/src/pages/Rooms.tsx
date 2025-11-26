@@ -94,7 +94,8 @@ const availabilityLabel = (status: RoomSummary["availabilityStatus"]) => {
   if (typeof status === "number") {
     if (status === 0) return "모집중";
     if (status === 1) return "예약중";
-    return "마감";
+    if (status === 2) return "마감"; 
+    return "오류";
   }
   if (typeof status === "string") {
     switch (status.toUpperCase()) {
