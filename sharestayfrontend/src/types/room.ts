@@ -110,7 +110,8 @@ export interface RoomDetailApiResponse {
   description: string;
   latitude: number;
   longitude: number;
-  imageUrls: string[];          // List<String>
+  images?: RoomImageResponse[];  // List<RoomImageResponse> (optional for compatibility)
+  imageUrls?: string[];          // List<String> (optional fallback)
   shareLinkUrl: string | null;
 }
 
@@ -127,14 +128,23 @@ export interface ShareLinkResponse {
  *  - RoomResponse.images(List<RoomImageResponse>) 를
  *    프론트 내부 RoomImage[] 로 변환
  */
-export const mapRoomFromApi = (room: RoomApiResponse): RoomSummary => {
+export const mapRoomFromApi = (
+  room: RoomApiResponse | RoomDetailApiResponse,
+): RoomSummary => {
   const normalizedImages: RoomImage[] =
     room.images?.map((image) => ({
       id: image.id,
       imageId: image.id,
       roomId: room.id,
       imageUrl: resolveRoomImageUrl(image.imageUrl) ?? image.imageUrl ?? "",
-    })) ?? [];
+    })) ??
+    room.imageUrls?.map((url, index) => ({
+      id: index,
+      imageId: index,
+      roomId: room.id,
+      imageUrl: resolveRoomImageUrl(url) ?? url ?? "",
+    })) ??
+    [];
 
   return {
     roomId: room.id,
@@ -146,6 +156,6 @@ export const mapRoomFromApi = (room: RoomApiResponse): RoomSummary => {
     availabilityStatus: room.availabilityStatus,
     description: room.description,
     images: normalizedImages,
-    shareLinkUrl: room.shareLinkUrl,
+    shareLinkUrl: room.shareLinkUrl ?? undefined,
   };
 };

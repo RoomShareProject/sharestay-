@@ -1,5 +1,4 @@
 ﻿// src/pages/Rooms.tsx  방검색
-import type { AxiosError } from "axios";
 import {
   Box,
   Button,
@@ -34,7 +33,7 @@ import SiteFooter from "../components/SiteFooter";
 import SiteHeader from "../components/SiteHeader";
 import { api } from "../lib/api";
 import { fetchFavoriteRooms, toggleFavoriteRoom } from "../lib/favorites";
-import type { RoomApiResponse, RoomSummary, ShareLinkResponse } from "../types/room";
+import type { RoomApiResponse, RoomSummary } from "../types/room";
 import { mapRoomFromApi } from "../types/room";
 import fallbackImageSrc from "../img/no_img.jpg";
 // ✅ 1) Grid는 따로 디폴트 import
@@ -123,8 +122,6 @@ type RoomSearchOverrides = {
 
 export default function Rooms() {
   const { user } = useAuth();
-  const canCreateShareLink =
-    user?.role === "HOST" || user?.role === "ADMIN";
   const [searchParams, setSearchParams] = useSearchParams();
   const highlightParam = searchParams.get("highlight");
   const highlightedRoomId = (() => {
@@ -351,39 +348,26 @@ export default function Rooms() {
     }
   };
 
-  const fetchShareLink = async (roomId: number): Promise<string | null> => {
-    try {
-      const { data } = await api.get<ShareLinkResponse>(`/rooms/${roomId}/share`);
-      return data?.linkUrl ?? null;
-    } catch (err) {
-      const status = (err as AxiosError)?.response?.status;
-      if (status === 404) return null;
-      throw err;
-    }
-  };
-
   const handleShareLink = async (room: RoomSummary) => {
-  const link = room.shareLinkUrl;
+    const link = room.shareLinkUrl;
 
-  if (!link) {
-    alert("공유 링크가 준비되지 않았습니다. 관리자에게 문의해 주세요.");
-    return;
-  }
+    if (!link) {
+      alert("공유 링크가 준비되지 않았습니다. 관리자에게 문의해 주세요.");
+      return;
+    }
 
-  try {
-    if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(link);
-      alert("공유 링크가 클립보드에 복사되었습니다.\n" + link);
-    } else {
-      // 구형 브라우저 대비
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(link);
+        alert(`공유 링크가 클립보드에 복사되었습니다.`);  // \n${link}
+      } else {
+        // 구형 브라우저 대비
+        window.prompt("이 링크를 복사해 주세요.", link);
+      }
+    } catch {
       window.prompt("이 링크를 복사해 주세요.", link);
     }
-  } catch {
-    window.prompt("이 링크를 복사해 주세요.", link);
-  }
-};
-
-
+  };
 
   return (
     <Box sx={{ bgcolor: "#f4f6fb", minHeight: "100vh" }}>
