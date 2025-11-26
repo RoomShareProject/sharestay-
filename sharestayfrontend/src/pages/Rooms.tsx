@@ -147,22 +147,37 @@ export default function Rooms() {
     [priceRange]
   );
 
-  const fetchRooms = async (overrides?: RoomSearchOverrides) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const keywordValue = overrides?.keyword ?? keyword;
-      const districtValue = overrides?.district ?? district;
-      const roomTypeValue = overrides?.roomType ?? roomType;
-      const priceRangeValue = overrides?.priceRange ?? priceRange;
-      const [minPrice, maxPrice] = priceRangeValue;
-      const regionParam = districtValue || keywordValue || "";
-      const hasCustomPriceRange =
-        priceRangeValue[0] !== defaultPriceRange[0] ||
-        priceRangeValue[1] !== defaultPriceRange[1];
-      const { data } = await api.get<RoomApiResponse[]>("/rooms/search", {
+  const fetchRooms = useCallback(async (overrides?: RoomSearchOverrides) => {
+  setIsLoading(true);
+  setError(null);
+  try {
+    const keywordValue = overrides?.keyword ?? keyword;
+    const districtValue = overrides?.district ?? district;
+    const roomTypeValue = overrides?.roomType ?? roomType;
+    const priceRangeValue = overrides?.priceRange ?? priceRange;
+    const [minPrice, maxPrice] = priceRangeValue;
+
+    const regionParam = districtValue || "";
+
+    const hasCustomPriceRange =
+      priceRangeValue[0] !== defaultPriceRange[0] ||
+      priceRangeValue[1] !== defaultPriceRange[1];
+
+    const hasAnyFilter =
+      (regionParam && regionParam.trim().length > 0) ||
+      (roomTypeValue && roomTypeValue.trim().length > 0) ||
+      (keywordValue && keywordValue.trim().length > 0) ||
+      hasCustomPriceRange;
+
+    let data: RoomApiResponse[] = [];
+
+    if (!hasAnyFilter) {
+      const res = await api.get<RoomApiResponse[]>("/rooms");
+      data = res.data;
+    } else {
+      const res = await api.get<RoomApiResponse[]>("/rooms/search", {
         params: {
-          region: regionParam,
+          region: regionParam || undefined,
           type: roomTypeValue || undefined,
           minPrice:
             hasCustomPriceRange && Number.isFinite(minPrice)
@@ -175,34 +190,30 @@ export default function Rooms() {
           option: keywordValue || undefined,
         },
       });
-      const list = Array.isArray(data) ? data.map(mapRoomFromApi) : [];
-      const normalized = list.map((room) => {
-        const roomId = getRoomId(room);
-        return {
-          ...room,
-          isFavorite: roomId ? favorites.has(roomId) : false,
-        };
-      });
-      setRooms(normalized);
-    } catch (err) {
-      let message = "방 정보를 불러오는 중 오류가 발생했습니다.";
-      if (err instanceof AxiosError) {
-        if (err.response) {
-          // 서버가 응답했지만, 2xx 상태 코드가 아닌 경우
-          message = `서버 응답 오류: ${err.response.status} - ${
-            err.response.data?.message ?? "내용 없음"
-          }`;
-        } else if (err.request) {
-          // 요청은 보냈으나 응답을 받지 못한 경우 (CORS, 네트워크 문제 등)
-          message = "서버로부터 응답을 받지 못했습니다. CORS 또는 네트워크 설정을 확인해주세요.";
-        }
-      }
-      setError(message);
-      setRooms([]);
-    } finally {
-      setIsLoading(false);
+      data = res.data;
     }
-  };
+
+    const list = Array.isArray(data) ? data.map(mapRoomFromApi) : [];
+    const normalized = list.map((room) => {
+      const roomId = getRoomId(room);
+      return {
+        ...room,
+        isFavorite: roomId ? favorites.has(roomId) : false,
+      };
+    });
+
+    setRooms(normalized);
+  } catch (err) {
+    const message =
+      err instanceof Error
+        ? err.message
+        : "방 정보를 불러오는 중 오류가 발생했습니다.";
+    setError(message);
+    setRooms([]);
+  } finally {
+    setIsLoading(false);
+  }
+}, [keyword, district, roomType, priceRange, favorites]);
 
   useEffect(() => {
     const initialKeyword = searchParams.get("keyword") ?? "";
