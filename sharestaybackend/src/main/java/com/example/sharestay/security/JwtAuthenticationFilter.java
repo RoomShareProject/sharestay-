@@ -19,8 +19,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Objects;
 import java.util.Optional;
+
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
@@ -34,10 +34,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             BanService banService,
             UserRepository userRepository
     ) {
-        this.jwtService = Objects.requireNonNull(jwtService);
-        this.userDetailsService = Objects.requireNonNull(userDetailsService);
-        this.banService = Objects.requireNonNull(banService);
-        this.userRepository = Objects.requireNonNull(userRepository);
+        if (jwtService == null) throw new IllegalArgumentException("jwtService cannot be null");
+        if (userDetailsService == null) throw new IllegalArgumentException("userDetailsService cannot be null");
+        if (banService == null) throw new IllegalArgumentException("banService cannot be null");
+        if (userRepository == null) throw new IllegalArgumentException("userRepository cannot be null");
+        this.jwtService = jwtService;
+        this.userDetailsService = userDetailsService;
+        this.banService = banService;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -45,16 +49,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             HttpServletRequest request, HttpServletResponse response, FilterChain filterChain
     ) throws ServletException, IOException {
 
-        String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+        final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
 
         if (!StringUtils.hasText(authHeader) || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        String jwt = authHeader.substring(7);
+        final String jwt = authHeader.substring(7);
 
-        String userEmail;
+        final String userEmail;
         try {
             userEmail = jwtService.extractUsername(jwt);
         } catch (Exception e) {
@@ -62,39 +66,35 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        if (!StringUtils.hasText(userEmail) ||
-                SecurityContextHolder.getContext().getAuthentication() != null) {
-            filterChain.doFilter(request, response);
-            return;
+        if (StringUtils.hasText(userEmail) && SecurityContextHolder.getContext().getAuthentication() == null) {
+            Optional<User> userOpt = userRepository.findByUsername(userEmail);
+            if (userOpt.isEmpty()) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+
+            User user = userOpt.get();
+
+            // 활성 + 만료되지 않은 정지 여부 확인
+            if (banService.getActiveBanByUserId(user.getId()).isPresent()) {
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                response.setContentType("application/json");
+                response.getWriter().write("{\"message\":\"정지된 계정입니다.\"}");
+                return;
+            }
+
+            UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+
+            if (jwtService.isTokenValid(jwt, userDetails)) {
+                SecurityContext context = SecurityContextHolder.createEmptyContext();
+                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                        userDetails, null, userDetails.getAuthorities()
+                );
+                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                context.setAuthentication(authToken);
+                SecurityContextHolder.setContext(context);
+            }
         }
-
-        User user = userRepository.findByUsername(userEmail).orElse(null);
-        if (user == null) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        if (banService.getActiveBanByUserId(user.getId()).isPresent()) {
-            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            response.setContentType("application/json;charset=UTF-8");
-            response.getWriter().write("{\"message\":\"정지된 계정입니다.\"}");
-            return;
-        }
-
-        UserDetails userDetails = userDetailsService.loadUserByUsername(userEmail);
-
-        if (jwtService.isTokenValid(jwt, userDetails)) {
-            UsernamePasswordAuthenticationToken authToken =
-                    new UsernamePasswordAuthenticationToken(
-                            userDetails, null, userDetails.getAuthorities());
-
-            authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-            SecurityContext context = SecurityContextHolder.createEmptyContext();
-            context.setAuthentication(authToken);
-            SecurityContextHolder.setContext(context);
-        }
-
         filterChain.doFilter(request, response);
     }
 }
