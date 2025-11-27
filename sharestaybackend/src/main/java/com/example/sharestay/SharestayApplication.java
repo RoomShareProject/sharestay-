@@ -58,8 +58,8 @@ public class SharestayApplication implements CommandLineRunner {
         userRepository.save(admin1);
 
         User admin2 = new User(
-                "admin2@test.com",
-                encoder.encode("admin2345"),
+                "admin@test.com",
+                encoder.encode("user1234"),
                 "LOCAL",
                 "관리자2",
                 "서울, 대한민국",
@@ -75,7 +75,7 @@ public class SharestayApplication implements CommandLineRunner {
     -------------------------- */
         User hostUser1 = new User(
                 "host1@test.com",
-                encoder.encode("host1234"),
+                encoder.encode("user1234"),
                 "LOCAL",
                 "홍대 호스트",
                 "서울 마포구",
@@ -87,7 +87,7 @@ public class SharestayApplication implements CommandLineRunner {
 
         User hostUser2 = new User(
                 "host2@test.com",
-                encoder.encode("host2234"),
+                encoder.encode("user1234"),
                 "LOCAL",
                 "강남 호스트",
                 "서울 강남구",
@@ -99,7 +99,7 @@ public class SharestayApplication implements CommandLineRunner {
 
         User hostUser3 = new User(
                 "host3@test.com",
-                encoder.encode("host3234"),
+                encoder.encode("user1234"),
                 "LOCAL",
                 "잠실 호스트",
                 "서울 송파구",
@@ -115,7 +115,7 @@ public class SharestayApplication implements CommandLineRunner {
     -------------------------- */
         User guest1 = new User(
                 "guest1@test.com",
-                encoder.encode("guest1234"),
+                encoder.encode("user1234"),
                 "LOCAL",
                 "김게스트",
                 "부산 해운대",
@@ -127,7 +127,7 @@ public class SharestayApplication implements CommandLineRunner {
 
         User guest2 = new User(
                 "guest2@test.com",
-                encoder.encode("guest2234"),
+                encoder.encode("user1234"),
                 "LOCAL",
                 "박여행",
                 "대구 수성구",
@@ -139,7 +139,7 @@ public class SharestayApplication implements CommandLineRunner {
 
         User guest3 = new User(
                 "guest3@test.com",
-                encoder.encode("guest3234"),
+                encoder.encode("user1234"),
                 "LOCAL",
                 "최출장",
                 "서울 노원구",

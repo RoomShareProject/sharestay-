@@ -9,7 +9,6 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-} from "@mui/material";
 import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import { useForm } from "react-hook-form";
@@ -22,7 +21,6 @@ import axios from "axios";
 import { setStoredUsername } from "../lib/api"; 
 import { useEffect } from "react"; 
 
-//==== 구글 로그인 URL
 const GOOGLE_OAUTH2_URL = "http://localhost:8080/oauth2/authorization/google";
 
 const schema = z.object({
@@ -49,14 +47,17 @@ export default function Login() {
 
   const onSubmit = async (values: FormValues) => {
     try {
-      console.log("[Login] 보내는 값:", values);
-
       await login(values.username, values.password);
-
-      // 로컬 로그인 성공 시 홈으로 이동
       window.location.href = "/";
     } catch (err: any) {
       console.error("[Login] 로그인 실패:", err);
+
+      if (err?.response?.status === 403) {
+        const message = err.response.data?.message ?? "정지된 계정입니다.";
+        alert(message);
+        window.location.href = "/login";
+        return;
+      }
 
       if (err?.response) {
         console.error("[Login] status:", err.response.status);
@@ -89,7 +90,6 @@ export default function Login() {
   //===== 구글 로그인 버튼 클릭
   const handleGoogleLogin = () => {
     window.location.href = GOOGLE_OAUTH2_URL;
-  };
   };
 
   return (
@@ -197,7 +197,6 @@ export default function Login() {
             onClick={handleGoogleLogin} // 구글 로그인 버튼 이벤트
             sx={{
               borderRadius: 2,
-              py: 1.4,
               py: 1.4,
               fontWeight: 700,
               borderColor: "#040505ff",

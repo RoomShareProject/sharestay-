@@ -20,6 +20,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Optional;
+
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
@@ -27,8 +29,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final BanService banService;
     private final UserRepository userRepository;
 
-    public JwtAuthenticationFilter(JwtService jwtService, UserDetailsServiceImpl userDetailsService, BanService banService,
-                                   UserRepository userRepository) {
+    public JwtAuthenticationFilter(
+            JwtService jwtService,
+            UserDetailsServiceImpl userDetailsService,
+            BanService banService,
+            UserRepository userRepository
+    ) {
         if (jwtService == null) throw new IllegalArgumentException("jwtService cannot be null");
         if (userDetailsService == null) throw new IllegalArgumentException("userDetailsService cannot be null");
         if (banService == null) throw new IllegalArgumentException("banService cannot be null");
@@ -46,16 +52,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        //  쿠키에서 JWT 꺼냄
-        String jwt = extractTokenFromCookie(request);
+        final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
 
-        if (jwt == null) {
+        if (!StringUtils.hasText(authHeader) || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // 토큰에서 이메일을 추출
-        String userEmail;
+        final String jwt = authHeader.substring(7);
+
+        final String userEmail;
         try {
             userEmail = jwtService.extractUsername(jwt);
         } catch (Exception e) {
@@ -63,17 +69,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        // SecurityContext 에 인증 정보가 없다면 인증 시도
-        if (StringUtils.hasText(userEmail)
-                && SecurityContextHolder.getContext().getAuthentication() == null) {
+        if (StringUtils.hasText(userEmail) && SecurityContextHolder.getContext().getAuthentication() == null) {
+            Optional<User> userOpt = userRepository.findByUsername(userEmail);
+            if (userOpt.isEmpty()) {
+                filterChain.doFilter(request, response);
+                return;
+            }
 
-            UserDetails userDetails = userDetailsService.loadUserByUsername(userEmail);
+            User user = userOpt.get();
+
+            // 활성 + 만료되지 않은 정지 여부 확인
+            if (banService.getActiveBanByUserId(user.getId()).isPresent()) {
+                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                response.setContentType("application/json");
+                response.getWriter().write("{\"message\":\"정지된 계정입니다.\"}");
+                return;
+            }
+
+            UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
 
             if (jwtService.isTokenValid(jwt, userDetails)) {
-                UsernamePasswordAuthenticationToken authToken =
-                        new UsernamePasswordAuthenticationToken(
-                                userDetails, null, userDetails.getAuthorities()
-                        );
+                SecurityContext context = SecurityContextHolder.createEmptyContext();
+                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                        userDetails, null, userDetails.getAuthorities()
+                );
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
