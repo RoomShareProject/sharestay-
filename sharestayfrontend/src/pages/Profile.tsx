@@ -11,11 +11,24 @@ import {
   Container,
   Divider,
   Grid,
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Paper,
   Stack,
   TextField,
   Typography,
   useTheme,
 } from "@mui/material";
+import {
+  CalendarToday,
+  FavoriteBorder,
+  Group,
+  HomeWork,
+  PersonOutline,
+  SecurityOutlined,
+} from "@mui/icons-material";
 import { Link as RouterLink } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../auth/useAuth";
@@ -24,6 +37,7 @@ import SiteFooter from "../components/SiteFooter";
 import { fetchFavoriteRooms } from "../lib/favorites";
 import type { FavoriteRoom } from "../types/favorite";
 import { extractFavoriteImageUrl } from "../types/favorite";
+
 const HERO_IMAGE =
   "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1600&q=80";
 
@@ -35,6 +49,17 @@ interface ProfileForm {
   hostIntroduction: string;
 }
 
+const lifestyleOptions = [
+  "조용한 생활",
+  "깔끔한 성격",
+  "운동 좋아함",
+  "요리 좋아함",
+  "음악 감상",
+  "독서 좋아함",
+  "반려동물 좋아함",
+  "규칙적인 생활",
+];
+
 export default function Profile() {
   const theme = useTheme();
   const { user, logout, updateProfile } = useAuth();
@@ -43,6 +68,9 @@ export default function Profile() {
   const [favoriteRooms, setFavoriteRooms] = useState<FavoriteRoom[]>([]);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [favoriteError, setFavoriteError] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState<
+    "profile" | "favorites" | "reservations" | "security" | "rooms" | "roommate"
+  >("profile");
   const [form, setForm] = useState<ProfileForm>({
     nickname: "",
     address: "",
@@ -50,6 +78,7 @@ export default function Profile() {
     lifeStyle: "",
     hostIntroduction: "",
   });
+  const [lifeStyleSelections, setLifeStyleSelections] = useState<string[]>([]);
 
   useEffect(() => {
     if (user) {
@@ -62,6 +91,15 @@ export default function Profile() {
       });
     }
   }, [user?.id]);
+
+  useEffect(() => {
+    const parsed =
+      form.lifeStyle
+        ?.split(",")
+        .map((item) => item.trim())
+        .filter(Boolean) ?? [];
+    setLifeStyleSelections(parsed);
+  }, [form.lifeStyle]);
 
   useEffect(() => {
     let ignore = false;
@@ -82,7 +120,7 @@ export default function Profile() {
         const message =
           error instanceof Error
             ? error.message
-            : "즐겨찾기 목록을 불러오지 못했습니다.";
+            : "찜한 방을 불러오지 못했어요.";
         setFavoriteError(message);
         setFavoriteRooms([]);
       })
@@ -100,6 +138,8 @@ export default function Profile() {
     () => user?.roles ?? (user?.role ? [user.role] : []),
     [user]
   );
+  const isHost = roles.includes("HOST");
+  const roleLabel = isHost ? "호스트" : "게스트";
 
   type EditableTextField =
     | "nickname"
@@ -132,24 +172,50 @@ export default function Profile() {
     try {
       await updateProfile(form);
       setIsEditing(false);
-      alert("프로필이 업데이트되었습니다.");
+      alert("프로필이 업데이트되었어요.");
     } catch (error) {
       const message =
         error instanceof Error
           ? error.message
-          : "프로필을 저장하는 중 오류가 발생했습니다.";
+          : "프로필을 저장하는 중 문제가 발생했어요.";
       alert(message);
     } finally {
       setIsSaving(false);
     }
   };
 
+  const toggleLifestyle = (option: string) => {
+    setLifeStyleSelections((prev) => {
+      const has = prev.includes(option);
+      const next = has ? prev.filter((item) => item !== option) : [...prev, option];
+      setForm((prevForm) => ({
+        ...prevForm,
+        lifeStyle: next.join(", "),
+      }));
+      return next;
+    });
+  };
+
+  const sidebarMenu = isHost
+    ? [
+        { key: "profile" as const, label: "프로필 관리", icon: <PersonOutline /> },
+        { key: "rooms" as const, label: "내 방 관리", icon: <HomeWork /> },
+        { key: "roommate" as const, label: "룸메이트 신청", icon: <Group />, badge: 2 },
+        { key: "security" as const, label: "보안 설정", icon: <SecurityOutlined /> },
+      ]
+    : [
+        { key: "profile" as const, label: "프로필 관리", icon: <PersonOutline /> },
+        { key: "favorites" as const, label: "찜한 방", icon: <FavoriteBorder /> },
+        { key: "reservations" as const, label: "예약 내역", icon: <CalendarToday /> },
+        { key: "security" as const, label: "보안 설정", icon: <SecurityOutlined /> },
+      ];
+
   if (!user) {
     return (
       <Box minHeight="100vh" display="flex" flexDirection="column">
         <SiteHeader />
         <Box flex={1} display="grid" sx={{ placeItems: "center" }}>
-          <Typography>사용자 정보를 불러올 수 없습니다.</Typography>
+          <Typography>로그인한 사용자만 접근할 수 있습니다.</Typography>
         </Box>
         <SiteFooter />
       </Box>
@@ -157,313 +223,338 @@ export default function Profile() {
   }
 
   return (
-    <Box
-      minHeight="100vh"
-      display="flex"
-      flexDirection="column"
-      sx={{ backgroundColor: "#f4f6fb" }}
-    >
+    <Box minHeight="100vh" display="flex" flexDirection="column" sx={{ bgcolor: "#f4f6fb" }}>
       <SiteHeader />
-      <Container maxWidth="md" sx={{ flex: 1, py: { xs: 6, md: 10 } }}>
-        <Box
-          sx={{
-            bgcolor: "rgba(255,255,255,0.92)",
-            borderRadius: 4,
-            overflow: "hidden",
-            boxShadow: 6,
-            position: "relative",
-          }}
-        >
-          <Box
-            sx={{
-              position: "relative",
-              height: { xs: 220, md: 500 },
-              backgroundImage: `url(${HERO_IMAGE})`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-            }}
-          >
-            <Box
+      <Container maxWidth="lg" sx={{ flex: 1, py: { xs: 4, md: 8 } }}>
+        <Grid container spacing={3} alignItems="stretch">
+          <Grid size={{ xs: 12, md: 3 }}>
+            <Paper
+              elevation={3}
               sx={{
-                position: "absolute",
-                inset: 0,
-                bgcolor: "rgba(14, 29, 45, 0.55)",
-              }}
-            />
-
-            <Box
-              sx={{
-                position: "absolute",
-                top: 24,
-                right: 24,
+                borderRadius: 3,
+                p: 3,
                 display: "flex",
-                gap: 1,
-                flexWrap: "wrap",
+                flexDirection: "column",
+                gap: 2.5,
+                height: { xs: "auto", md: "100%" },
+                position: "relative",
               }}
             >
-              {isEditing ? (
-                <>
-                  <Button
-                    variant="outlined"
-                    color="inherit"
-                    onClick={handleCancel}
-                    disabled={isSaving}
-                    sx={{ backgroundColor: "#ffffff" }}
-                  >
-                    취소
-                  </Button>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={handleSave}
-                    disabled={isSaving}
-                  >
-                    {isSaving ? "저장 중..." : "저장"}
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button
-                    variant="outlined"
-                    color="inherit"
-                    onClick={() => setIsEditing(true)}
-                    sx={{ backgroundColor: "#ffffff" }}
-                  >
-                    정보 수정
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    color="inherit"
-                    onClick={logout}
-                    sx={{ backgroundColor: "#ffffff" }}
-                  >
-                    로그아웃
-                  </Button>
-                </>
-              )}
-            </Box>
-
-            <Stack
-              spacing={1.5}
-              alignItems="center"
-              position="absolute"
-              left="50%"
-              top="50%"
-              sx={{ transform: "translate(-50%, -30%)" }}
-            >
-              <Avatar
+              <Box
                 sx={{
-                  width: { xs: 96, md: 120 },
-                  height: { xs: 96, md: 120 },
-                  border: "4px solid rgba(255,255,255,0.8)",
-                  bgcolor: theme.palette.primary.main,
-                  fontSize: 32,
+                  position: "absolute",
+                  inset: 0,
+                  backgroundImage: `linear-gradient(180deg, rgba(120,147,216,0.08), rgba(255,255,255,0.9)), url(${HERO_IMAGE})`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                  opacity: 0.18,
+                  borderRadius: 3,
                 }}
-              >
-                {user.nickname?.slice(0, 1)?.toUpperCase() ??
-                  user.username.slice(0, 1).toUpperCase()}
-              </Avatar>
-              <Typography variant="h4" fontWeight={700} color="white">
-                {user.nickname || user.username}
-              </Typography>
-              <Stack
-                direction="row"
-                spacing={1}
-                flexWrap="wrap"
-                justifyContent="center"
-              >
-                {roles.length > 0 ? (
-                  roles.map((role) => (
-                    <Box
-                      key={role}
+              />
+              <Stack spacing={1.5} alignItems="center" sx={{ position: "relative" }}>
+                <Avatar
+                  sx={{
+                    width: 84,
+                    height: 84,
+                    bgcolor: theme.palette.primary.light,
+                    color: theme.palette.primary.main,
+                    fontSize: 32,
+                  }}
+                >
+                  {user.nickname?.slice(0, 1)?.toUpperCase() ?? user.username.slice(0, 1).toUpperCase()}
+                </Avatar>
+                <Stack spacing={0.5} alignItems="center">
+                  <Typography variant="h6" fontWeight={700}>
+                    {user.nickname || user.username}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {roleLabel}
+                  </Typography>
+                  {user.email && (
+                    <Typography variant="caption" color="text.secondary">
+                      {user.email}
+                    </Typography>
+                  )}
+                </Stack>
+              </Stack>
+
+              <Divider sx={{ position: "relative" }} />
+
+              <List sx={{ p: 0, position: "relative" }}>
+                {sidebarMenu.map((item) => {
+                  const isActive = activeSection === item.key;
+                  return (
+                    <ListItemButton
+                      key={item.label}
+                      onClick={() => setActiveSection(item.key)}
+                      selected={isActive}
                       sx={{
-                        px: 1.5,
-                        py: 0.5,
-                        borderRadius: 999,
-                        bgcolor: "rgba(255,255,255,0.2)",
-                        color: "white",
-                        fontSize: 12,
-                        letterSpacing: 1,
+                        borderRadius: 2,
+                        mb: 1,
+                        "&.Mui-selected": {
+                          bgcolor: "rgba(55,126,255,0.12)",
+                          color: theme.palette.primary.main,
+                        },
                       }}
                     >
-                      {role}
-                    </Box>
-                  ))
-                ) : (
-                  <Box
-                    sx={{
-                      px: 1.5,
-                      py: 0.5,
-                      borderRadius: 999,
-                      bgcolor: "rgba(255,255,255,0.2)",
-                      color: "white",
-                      fontSize: 12,
-                      letterSpacing: 1,
-                    }}
-                  >
-                    ROLE_PENDING
+                      <ListItemIcon sx={{ minWidth: 32, color: "inherit" }}>
+                        {item.icon}
+                      </ListItemIcon>
+                      <ListItemText primary={item.label} />
+                      {"badge" in item && item.badge ? (
+                        <Box
+                          sx={{
+                            bgcolor: "#ef4444",
+                            color: "white",
+                            borderRadius: "999px",
+                            px: 1,
+                            fontSize: 12,
+                            fontWeight: 700,
+                          }}
+                        >
+                          {item.badge}
+                        </Box>
+                      ) : null}
+                    </ListItemButton>
+                  );
+                })}
+              </List>
+            </Paper>
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 9 }}>
+            {activeSection === "profile" && (
+              <Card
+                sx={{
+                  borderRadius: 3,
+                  boxShadow: "0 12px 28px rgba(12,31,89,0.12)",
+                  overflow: "hidden",
+                }}
+              >
+                <Box
+                  sx={{
+                    bgcolor: "#f7f9ff",
+                    px: { xs: 2.5, md: 3.5 },
+                    py: 2.5,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 2,
+                  }}
+                >
+                  <Box>
+                    <Typography variant="h5" fontWeight={800}>
+                      {isHost ? "호스트 프로필 관리" : "게스트 프로필 관리"}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      정보를 최신으로 유지하면 더 안전한 매칭이 가능해요.
+                    </Typography>
                   </Box>
-                )}
-              </Stack>
-            </Stack>
-          </Box>
-
-          <Box sx={{ p: { xs: 3, md: 5 } }}>
-            <Stack spacing={4}>
-              <Box>
-                <Typography variant="h6" fontWeight={700} gutterBottom>
-                  Information
-                </Typography>
-                <Divider sx={{ mb: 3 }} />
-                <Stack spacing={2.5}>
-                  <InfoRow label="이메일" value={user.username} />
-                  <InfoRow
-                    label="닉네임"
-                    value={form.nickname}
-                    editing={isEditing}
-                    onChange={handleChange("nickname")}
-                  />
-                  <InfoRow
-                    label="연락처"
-                    value={form.phoneNumber}
-                    editing={isEditing}
-                    onChange={handleChange("phoneNumber")}
-                  />
-                  <InfoRow
-                    label="주소"
-                    value={form.address}
-                    editing={isEditing}
-                    onChange={handleChange("address")}
-                  />
-                </Stack>
-              </Box>
-
-              <Box>
-                <Typography variant="h6" fontWeight={700} gutterBottom>
-                  Lifestyle
-                </Typography>
-                <Divider sx={{ mb: 3 }} />
-                <TextAreaRow
-                  value={form.lifeStyle}
-                  editing={isEditing}
-                  onChange={handleChange("lifeStyle")}
-                />
-              </Box>
-
-              <Box>
-                <Typography variant="h6" fontWeight={700} gutterBottom>
-                  좋아요한 방
-                </Typography>
-                <Divider sx={{ mb: 3 }} />
-                {favoriteLoading ? (
-                  <Stack alignItems="center" py={4}>
-                    <CircularProgress />
-                  </Stack>
-                ) : favoriteError ? (
-                  <Typography color="error">{favoriteError}</Typography>
-                ) : favoriteRooms.length === 0 ? (
-                  <Typography color="text.secondary">
-                    아직 좋아요한 방이 없습니다.
-                  </Typography>
-                ) : (
-                  <Grid container spacing={2}>
-                    {favoriteRooms.map((item) => (
-                      <Grid key={item.roomId} size={{ xs: 12, sm: 6 }}>
-                        <FavoriteRoomCard room={item} />
-                      </Grid>
-                    ))}
-                  </Grid>
-                )}
-              </Box>
-
-              {roles.includes("HOST") && (
-                <Box>
-                  <Typography variant="h6" fontWeight={700} gutterBottom>
-                    호스트 정보
-                  </Typography>
-                  <Divider sx={{ mb: 3 }} />
-                  <Stack spacing={2.5}>
-                    <Stack spacing={1}>
-                      <Typography variant="overline" color="text.secondary">
-                        호스트 소개
-                      </Typography>
-                      {isEditing ? (
-                        <TextField
-                          multiline
-                          minRows={3}
-                          value={form.hostIntroduction}
-                          onChange={handleChange("hostIntroduction")}
-                          fullWidth
-                        />
-                      ) : (
-                        <Typography variant="body1" fontWeight={500}>
-                          {form.hostIntroduction || "-"}
-                        </Typography>
-                      )}
-                    </Stack>
+                  <Stack direction="row" spacing={1}>
+                    {isEditing ? (
+                      <>
+                        <Button variant="outlined" onClick={handleCancel} disabled={isSaving}>
+                          취소
+                        </Button>
+                        <Button variant="contained" onClick={handleSave} disabled={isSaving}>
+                          {isSaving ? "저장 중..." : "저장"}
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button variant="outlined" onClick={() => setIsEditing(true)}>
+                          수정하기
+                        </Button>
+                        <Button variant="text" color="inherit" onClick={logout}>
+                          로그아웃
+                        </Button>
+                      </>
+                    )}
                   </Stack>
                 </Box>
-              )}
-            </Stack>
-          </Box>
-        </Box>
+
+                <CardContent sx={{ p: { xs: 3, md: 4 }, display: "grid", gap: 3 }}>
+                  <Grid container spacing={2.5}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <TextField label="아이디" fullWidth value={user.username} InputProps={{ readOnly: true }} />
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <TextField
+                        label="닉네임"
+                        fullWidth
+                        value={form.nickname}
+                        onChange={handleChange("nickname")}
+                        disabled={!isEditing}
+                      />
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <TextField
+                        label="이메일"
+                        fullWidth
+                        value={user.email ?? ""}
+                        placeholder="이메일 정보가 없습니다"
+                        InputProps={{ readOnly: true }}
+                      />
+                    </Grid>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                      <TextField
+                        label="전화번호"
+                        fullWidth
+                        value={form.phoneNumber}
+                        onChange={handleChange("phoneNumber")}
+                        disabled={!isEditing}
+                      />
+                    </Grid>
+                    <Grid size={{ xs: 12 }}>
+                      <TextField
+                        label="주소"
+                        fullWidth
+                        value={form.address}
+                        onChange={handleChange("address")}
+                        disabled={!isEditing}
+                      />
+                    </Grid>
+                    {!isHost && (
+                      <Grid size={{ xs: 12 }}>
+                        <Typography variant="subtitle1" fontWeight={700} gutterBottom>
+                          선호 생활 스타일
+                        </Typography>
+                        <Stack direction="row" gap={1} flexWrap="wrap">
+                          {lifestyleOptions.map((option) => {
+                            const selected = lifeStyleSelections.includes(option);
+                            return (
+                              <Button
+                                key={option}
+                                size="small"
+                                variant={selected ? "contained" : "outlined"}
+                                color={selected ? "primary" : "inherit"}
+                                disabled={!isEditing}
+                                onClick={() => toggleLifestyle(option)}
+                                sx={{
+                                  borderRadius: 999,
+                                  textTransform: "none",
+                                }}
+                              >
+                                {option}
+                              </Button>
+                            );
+                          })}
+                        </Stack>
+                      </Grid>
+                    )}
+                    <Grid size={{ xs: 12 }}>
+                      <TextField
+                        label={isHost ? "호스트 소개" : "자기소개"}
+                        fullWidth
+                        multiline
+                        minRows={isHost ? 3 : 4}
+                        value={isHost ? form.hostIntroduction : form.lifeStyle}
+                        onChange={isHost ? handleChange("hostIntroduction") : handleChange("lifeStyle")}
+                        disabled={!isEditing}
+                      />
+                    </Grid>
+                  </Grid>
+
+                  {isHost && (
+                    <Box
+                      sx={{
+                        bgcolor: "#f5f8ff",
+                        borderRadius: 2,
+                        p: 2,
+                        display: "grid",
+                        gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" },
+                        gap: 2,
+                      }}
+                    >
+                      {[
+                        { label: "평점", value: "—", helper: "리뷰 집계 예정" },
+                        { label: "응답률", value: "—", helper: "문의 기록 수집 중" },
+                        { label: "응답시간", value: "—", helper: "데이터 준비 중" },
+                      ].map((stat) => (
+                        <Stack key={stat.label} spacing={0.5}>
+                          <Typography variant="overline" color="text.secondary">
+                            {stat.label}
+                          </Typography>
+                          <Typography variant="h5" fontWeight={800} color="primary">
+                            {stat.value}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {stat.helper}
+                          </Typography>
+                        </Stack>
+                      ))}
+                    </Box>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {activeSection === "favorites" && (
+              <Card
+                sx={{
+                  borderRadius: 3,
+                  boxShadow: "0 12px 28px rgba(12,31,89,0.12)",
+                }}
+              >
+                <Box sx={{ px: 3, py: 2.5, bgcolor: "#f7f9ff" }}>
+                  <Typography variant="h5" fontWeight={800}>
+                    찜한 방
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    찜한 방을 확인하고 바로 이동해보세요.
+                  </Typography>
+                </Box>
+                <CardContent sx={{ p: 3 }}>
+                  {favoriteLoading ? (
+                    <Stack alignItems="center" py={4}>
+                      <CircularProgress />
+                    </Stack>
+                  ) : favoriteError ? (
+                    <Typography color="error">{favoriteError}</Typography>
+                  ) : favoriteRooms.length === 0 ? (
+                    <Typography color="text.secondary">아직 찜한 방이 없습니다.</Typography>
+                  ) : (
+                    <Stack spacing={2.5}>
+                      {favoriteRooms.map((item) => (
+                        <FavoriteRoomCard key={item.roomId} room={item} />
+                      ))}
+                    </Stack>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {activeSection === "security" && (
+              <SectionPlaceholder
+                title="보안 설정"
+                description="비밀번호 변경, 로그인 알림 등 보안을 강화하는 영역입니다. 디자인 가이드를 반영해 곧 제공될 예정이에요."
+              />
+            )}
+            {activeSection === "reservations" && !isHost && (
+              <SectionPlaceholder
+                title="예약 내역"
+                description="예약 내역이 이곳에 표시됩니다. 현재는 준비 중입니다."
+              />
+            )}
+            {activeSection === "rooms" && isHost && (
+              <SectionPlaceholder
+                title="내 방 관리"
+                description="등록한 방을 관리하는 공간입니다. 디자인과 동일한 형태로 확장 준비 중입니다."
+                actionLabel="방 등록하러 가기"
+                actionHref="/list-room"
+              />
+            )}
+            {activeSection === "roommate" && isHost && (
+              <SectionPlaceholder
+                title="룸메이트 신청"
+                description="호스트가 받은 룸메이트 신청을 관리하는 공간입니다. 곧 만나보실 수 있어요."
+              />
+            )}
+          </Grid>
+        </Grid>
       </Container>
       <SiteFooter />
     </Box>
-  );
-}
-
-type InfoRowProps = {
-  label: string;
-  value: string;
-  editing?: boolean;
-  onChange?: (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => void;
-};
-
-function InfoRow({ label, value, editing = false, onChange }: InfoRowProps) {
-  return (
-    <Stack spacing={1}>
-      <Typography variant="overline" color="text.secondary">
-        {label}
-      </Typography>
-      {editing ? (
-        <TextField size="small" value={value} onChange={onChange} fullWidth />
-      ) : (
-        <Typography variant="body1" fontWeight={500}>
-          {value || "-"}
-        </Typography>
-      )}
-    </Stack>
-  );
-}
-
-type TextAreaRowProps = {
-  value: string;
-  editing?: boolean;
-  onChange?: (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => void;
-};
-
-function TextAreaRow({ value, editing = false, onChange }: TextAreaRowProps) {
-  return editing ? (
-    <TextField
-      multiline
-      minRows={3}
-      value={value}
-      onChange={onChange}
-      fullWidth
-    />
-  ) : (
-    <Typography
-      variant="body1"
-      fontWeight={500}
-      sx={{ whiteSpace: "pre-wrap" }}
-    >
-      {value || "입력된 라이프스타일 정보가 없습니다."}
-    </Typography>
   );
 }
 
@@ -473,52 +564,104 @@ type FavoriteRoomCardProps = {
 
 function FavoriteRoomCard({ room }: FavoriteRoomCardProps) {
   const imageUrl = extractFavoriteImageUrl(room.roomImg);
-  const likedAtLabel = room.likedAt
-    ? new Date(room.likedAt).toLocaleDateString()
-    : null;
+  const likedAtLabel = room.likedAt ? new Date(room.likedAt).toLocaleDateString() : null;
 
   return (
     <Card
       sx={{
-        height: "100%",
         display: "flex",
-        flexDirection: "column",
+        alignItems: "stretch",
+        gap: 2,
         borderRadius: 3,
-        boxShadow: 3,
+        boxShadow: 2,
+        overflow: "hidden",
       }}
     >
-      {imageUrl && (
+      {imageUrl ? (
         <CardMedia
           component="img"
-          height="160"
           image={imageUrl}
           alt={room.roomName}
-          sx={{ objectFit: "cover" }}
+          sx={{ width: 140, height: "100%", objectFit: "cover" }}
         />
+      ) : (
+        <Box
+          sx={{
+            width: 140,
+            bgcolor: "#f3f4f6",
+            display: "grid",
+            placeItems: "center",
+            color: "text.secondary",
+          }}
+        >
+          이미지 없음
+        </Box>
       )}
-      <CardContent sx={{ flex: 1 }}>
+      <Stack flex={1} justifyContent="space-between" sx={{ py: 2, pr: 2 }}>
         <Stack spacing={0.5}>
           <Typography variant="subtitle1" fontWeight={700}>
             {room.roomName}
           </Typography>
           {likedAtLabel && (
             <Typography variant="caption" color="text.secondary">
-              {likedAtLabel}에 저장
+              {likedAtLabel}에 찜한 방
             </Typography>
           )}
         </Stack>
-      </CardContent>
-      <CardActions sx={{ px: 2, pb: 2 }}>
-        <Button
-          size="small"
-          component={RouterLink}
-          to={room.roomId ? `/rooms/${room.roomId}` : "/rooms"}
-          sx={{ borderRadius: 999 }}
-        >
-          상세 보기
-        </Button>
-      </CardActions>
+        <CardActions sx={{ px: 0 }}>
+          <Button
+            size="small"
+            variant="contained"
+            component={RouterLink}
+            to={room.roomId ? `/rooms/${room.roomId}` : "/rooms"}
+            sx={{ borderRadius: 999, px: 2 }}
+          >
+            상세보기
+          </Button>
+        </CardActions>
+      </Stack>
     </Card>
   );
 }
 
+type SectionPlaceholderProps = {
+  title: string;
+  description: string;
+  actionLabel?: string;
+  actionHref?: string;
+};
+
+function SectionPlaceholder({ title, description, actionLabel, actionHref }: SectionPlaceholderProps) {
+  return (
+    <Card
+      sx={{
+        borderRadius: 3,
+        boxShadow: "0 12px 28px rgba(12,31,89,0.12)",
+      }}
+    >
+      <Box sx={{ px: 3, py: 2.5, bgcolor: "#f7f9ff" }}>
+        <Typography variant="h5" fontWeight={800}>
+          {title}
+        </Typography>
+      </Box>
+      <CardContent sx={{ p: 3 }}>
+        <Typography variant="body1" color="text.secondary">
+          {description}
+        </Typography>
+        {actionLabel && actionHref && (
+          <Box mt={2}>
+            <Button
+              variant="contained"
+              color="primary"
+              component={RouterLink}
+              to={actionHref}
+              sx={{ borderRadius: 2 }}
+            >
+              {actionLabel}
+            </Button>
+          </Box>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
