@@ -108,17 +108,21 @@ public class BanService {
         return BanResponse.from(saved);
     }
 
+    @Transactional
     public List<BanResponse> getBanHistory(Long userId) {
         if (!userRepository.existsById(userId)) {
             throw new EntityNotFoundException("해당 사용자를 찾을 수 없습니다. ID: " + userId);
         }
         return banRepository.findByUserId(userId).stream()
+                .map(this::expireIfNeeded)
                 .map(BanResponse::from)
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public List<BanResponse> getAllBans() {
         return banRepository.findAll().stream()
+                .map(this::expireIfNeeded)
                 .map(BanResponse::from)
                 .collect(Collectors.toList());
     }
@@ -128,14 +132,8 @@ public class BanService {
         if (activeBanOpt.isEmpty()) return Optional.empty();
 
         Ban activeBan = activeBanOpt.get();
-        LocalDateTime endDate = activeBan.getEndDate();
-        if (endDate != null && endDate.isBefore(LocalDateTime.now())) {
-            activeBan.deactivate();
-            banRepository.save(activeBan);
-            logHistory(activeBan, activeBan.getUser(), "AUTO_EXPIRE", activeBan.getReason(), activeBan.getEndDate(), activeBan.getMemo());
-            return Optional.empty();
-        }
-        return Optional.of(activeBan);
+        Ban checked = expireIfNeeded(activeBan);
+        return checked.isActive() ? Optional.of(checked) : Optional.empty();
     }
 
     public List<BanHistoryResponse> getBanHistoryLog(Long userId) {
@@ -165,5 +163,20 @@ public class BanService {
         if (reason == null || reason.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "정지 사유는 필수입니다.");
         }
+    }
+
+    /**
+     * 만료된 정지는 자동 해제하고 저장까지 처리한다.
+     */
+    private Ban expireIfNeeded(Ban ban) {
+        if (ban.isActive()) {
+            LocalDateTime endDate = ban.getEndDate();
+            if (endDate != null && endDate.isBefore(LocalDateTime.now())) {
+                ban.deactivate();
+                banRepository.save(ban);
+                logHistory(ban, ban.getUser(), "AUTO_EXPIRE", ban.getReason(), ban.getEndDate(), ban.getMemo());
+            }
+        }
+        return ban;
     }
 }
