@@ -42,14 +42,13 @@ public class LoginController {
                             loginRequest.getPassword()
                     )
             );
-
             User user = userRepository.findByUsername(loginRequest.getUsername())
                     .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
-            Optional<Ban> activeBan = banService.getActiveBanByUserId(user.getId());
+            // 정지 여부 확인 (활성 + 만료되지 않은 정지)
+            java.util.Optional<Ban> activeBan = banService.getActiveBanByUserId(user.getId());
             if (activeBan.isPresent()) {
                 Ban ban = activeBan.get();
-
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
                         "message", "정지된 계정입니다.",
                         "banId", ban.getId(),
@@ -57,15 +56,16 @@ public class LoginController {
                 ));
             }
 
-            String token = jwtService.generateToken(user.getUsername());
-
+            String token = jwtService.generateToken(loginRequest.getUsername());
             return ResponseEntity.ok()
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                     .body(Map.of("accessToken", token));
-
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "Invalid credentials"));
         }
     }
 }
+
