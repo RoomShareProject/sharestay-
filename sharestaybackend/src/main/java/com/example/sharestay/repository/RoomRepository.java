@@ -50,6 +50,8 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
             @Param("radiusKm") double radiusKm
     );
 
+    List<Room> findByHostId(Long hostId);
+
 
 
 }
