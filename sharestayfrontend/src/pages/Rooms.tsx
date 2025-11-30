@@ -58,18 +58,51 @@ const filterFacilities = [
   "반려동물 가능",
 ];
 
-const districts = [
-  { value: "", label: "전체 지역" },
-  { value: "강남구", label: "강남구" },
-  { value: "마포구", label: "마포구" },
-  { value: "광진구", label: "광진구" },
-  { value: "송파구", label: "송파구" },
-  { value: "용산구", label: "용산구" },
+// 지역(광역) > 시/군/구 계층형 데이터
+const provinces = [
+  // { value: "", label: "지역 선택" },
+  { value: "서울", label: "서울" },
+  { value: "경기", label: "경기" },
+  { value: "인천", label: "인천" },
+  { value: "대전", label: "대전" },
+  { value: "세종", label: "세종" },
+  { value: "충남", label: "충남" },
+  { value: "충북", label: "충북" },
+  { value: "광주", label: "광주" },
+  { value: "전남", label: "전남" },
+  { value: "전북", label: "전북" },
+  { value: "대구", label: "대구" },
+  { value: "경북", label: "경북" },
+  { value: "부산", label: "부산" },
+  { value: "울산", label: "울산" },
+  { value: "경남", label: "경남" },
+  { value: "강원", label: "강원" },
+  { value: "제주", label: "제주" },
 ];
+
+const provinceDistrictMap: Record<string, string[]> = {
+  서울: ["종로구", "중구", "용산구", "성동구", "광진구", "동대문구", "중랑구", "성북구", "강북구", "도봉구", "노원구", "은평구", "서대문구", "마포구", "양천구", "강서구", "구로구", "금천구", "영등포구", "동작구", "관악구", "서초구", "강남구", "송파구", "강동구"],
+  경기: ["수원시", "고양시", "용인시", "성남시", "부천시", "안산시", "안양시", "남양주시", "화성시", "평택시", "의정부시", "시흥시", "파주시", "김포시", "광주시", "광명시", "군포시", "하남시", "오산시", "양주시", "이천시", "구리시", "안성시", "포천시", "의왕시", "여주시", "동두천시"],
+  인천: ["중구", "동구", "미추홀구", "연수구", "남동구", "부평구", "계양구", "서구", "강화군", "옹진군",],
+  대전: ["동구", "서구", "유성구", "중구", "대덕구"],
+  세종: ["세종시"],
+  충남: ["천안시", "공주시", "보령시", "아산시", "서산시" ,"논산시", "계룡시", "당진시", "금산군", "부여군", "서천군", "청양군", "홍성군", "예산군", "태안군"],
+  충북: ["청주시", "충주시", "제천시", "보은군", "옥천군", "영동군", "증평군", "진천군", "괴산군", "음성군", "단양군"],
+  광주: ["동구", "서구", "남구", "북구", "광산구"],
+  전남: ["목포시", "여수시", "순천시", "나주시", "광양시", "담양군", "곡성군", "구례군", "고흥군", "보성군", "화순군", "장흥군", "강진군", "해남군", "영암군", "무안군", "함평군", "영광군", "장성군", "완도군", "진도군", "신안군"],
+  전북: ["전주시", "군산시", "익산시", "정읍시", "남원시", "김제시", "완주군", "진안군", "무주군", "장수군", "임실군", "순창군", "고창군", "부안군"],
+  대구: ["중구", "동구", "서구", "남구", "북구", "수성구", "달서구", "달성군"],
+  경북: ["포항시", "경주시", "김천시", "안동시", "구미시", "영주시", "영천시", "상주시", "문경시", "경산시", "의성군", "청송군", "영양군", "영덕군", "청도군", "고령군", "성주군", "칠곡군", "예천군", "봉화군", "울진군", "울릉군"],
+  부산: ["중구", "서구", "동구", "영도구", "부산진구", "동래구", "남구", "북구", "해운대구", "사하구", "금정구", "연제구", "수영구", "사상구", "기장군"],
+  울산: ["중구", "남구", "동구", "북구", "울주군"],
+  경남: ["창원시", "진주시", "통영시", "사천시", "김해시", "밀양시", "거제시", "양산시", "의령군", "함안군", "창녕군", "고성군", "남해군", "하동군", "산청군", "함양군", "거창군", "합천군"],
+  강원: ["춘천시", "원주시", "강릉시", "동해시", "태백시", "속초시", "삼척시", "홍천군", "횡성군", "영월군", "평창군", "정선군", "철원군", "화천군", "양구군", "인제군", "고성군", "양양군"],
+  제주: ["제주시", "서귀포시"],
+};
 
 // 일단 무조건 한글로 맞추기
 const roomTypes = [
-  { value: "", label: "전체 유형" },
+  { value: "", label: "방 전체 종류" },
   { value: "원룸", label: "원룸" },
   { value: "투룸", label: "투룸" },
   { value: "오피스텔", label: "오피스텔" },
@@ -122,8 +155,31 @@ const availabilityLabel = (status: RoomSummary["availabilityStatus"]) => {
 
 const getRoomId = (room: RoomSummary) => room.roomId ?? room.id ?? null;
 
+const isClosedStatus = (status: RoomSummary["availabilityStatus"]) => {
+  if (typeof status === "number") return status >= 2;
+  if (typeof status === "string") {
+    const upper = status.toUpperCase();
+    return upper !== "AVAILABLE" && upper !== "PENDING";
+  }
+  return false;
+};
+
+const sortRoomsForDisplay = (list: RoomSummary[]) =>
+  [...list].sort((a, b) => {
+    const aClosed = isClosedStatus(a.availabilityStatus);
+    const bClosed = isClosedStatus(b.availabilityStatus);
+    if (aClosed !== bClosed) return aClosed ? 1 : -1; // 마감은 뒤로
+
+    const aId = getRoomId(a) ?? -Infinity;
+    const bId = getRoomId(b) ?? -Infinity;
+    if (aId !== bId) return bId - aId; // id가 큰(최근) 순서대로
+
+    return 0;
+  });
+
 type RoomSearchOverrides = {
   keyword?: string;
+  region?: string;
   district?: string;
   roomType?: string;
   priceRange?: number[];
@@ -143,7 +199,9 @@ export default function Rooms() {
   const highlightedCardRef = useRef<HTMLDivElement | null>(null);
   const defaultPriceRange: [number, number] = [0, 5000000];
   const [rooms, setRooms] = useState<RoomSummary[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
   const [keyword, setKeyword] = useState("");
+  const [region, setRegion] = useState("");
   const [district, setDistrict] = useState("");
   const [roomType, setRoomType] = useState("");
   const [priceRange, setPriceRange] = useState<number[]>(defaultPriceRange);
@@ -159,88 +217,112 @@ export default function Rooms() {
     [priceRange]
   );
 
+  const districtOptions = useMemo(() => {
+    return region ? provinceDistrictMap[region] ?? [] : [];
+  }, [region]);
+
+  const pageSize = 6;
+  const totalPages = Math.max(1, Math.ceil(rooms.length / pageSize));
+  const paginatedRooms = useMemo(
+    () =>
+      rooms.slice(
+        (currentPage - 1) * pageSize,
+        (currentPage - 1) * pageSize + pageSize
+      ),
+    [rooms, currentPage]
+  );
+
   const fetchRooms = useCallback(async (overrides?: RoomSearchOverrides) => {
-  setIsLoading(true);
-  setError(null);
-  try {
-    const keywordValue = overrides?.keyword ?? keyword;
-    const districtValue = overrides?.district ?? district;
-    const roomTypeValue = overrides?.roomType ?? roomType;
-    const priceRangeValue = overrides?.priceRange ?? priceRange;
-    const [minPrice, maxPrice] = priceRangeValue;
-    const regionParam = districtValue || "";
-    // ⭐ 추가: override로 들어온 facility가 있으면 그걸 우선 사용
-    const facilityValue = overrides?.facility ?? selectedFacility;
+    setIsLoading(true);
+    setError(null);
+    try {
+      const keywordValue = overrides?.keyword ?? keyword;
+      const regionValue = overrides?.region ?? region;
+      const districtValue = overrides?.district ?? district;
+      const regionParam = [regionValue, districtValue].filter(Boolean).join(" ");
+      const roomTypeValue = overrides?.roomType ?? roomType;
+      const priceRangeValue = overrides?.priceRange ?? priceRange;
+      const [minPrice, maxPrice] = priceRangeValue;
+      // ⭐ 추가: override로 들어온 facility가 있으면 그걸 우선 사용
+      const facilityValue = overrides?.facility ?? selectedFacility;
 
-    const hasCustomPriceRange =
-      priceRangeValue[0] !== defaultPriceRange[0] ||
-      priceRangeValue[1] !== defaultPriceRange[1];
+      const hasCustomPriceRange =
+        priceRangeValue[0] !== defaultPriceRange[0] ||
+        priceRangeValue[1] !== defaultPriceRange[1];
 
-    const optionParam =
-      (facilityValue && facilityValue.trim().length > 0
-        ? facilityValue
-        : undefined) ||
-      (keywordValue && keywordValue.trim().length > 0
-        ? keywordValue
-        : undefined);
+      const optionParam =
+        (facilityValue && facilityValue.trim().length > 0
+          ? facilityValue
+          : undefined) ||
+        (keywordValue && keywordValue.trim().length > 0
+          ? keywordValue
+          : undefined);
 
-    const hasAnyFilter =
-      (regionParam && regionParam.trim().length > 0) ||
-      (roomTypeValue && roomTypeValue.trim().length > 0) ||
-      (keywordValue && keywordValue.trim().length > 0) ||
-      (facilityValue && facilityValue.trim().length > 0) ||  // ⭐ 추가
-      hasCustomPriceRange;
-      
+      const hasAnyFilter =
+        (regionParam && regionParam.trim().length > 0) ||
+        (roomTypeValue && roomTypeValue.trim().length > 0) ||
+        (keywordValue && keywordValue.trim().length > 0) ||
+        (facilityValue && facilityValue.trim().length > 0) ||  // ⭐ 추가
+        hasCustomPriceRange;
 
-    let data: RoomApiResponse[] = [];
+      let data: RoomApiResponse[] = [];
 
-    if (!hasAnyFilter) {
-      const res = await api.get<RoomApiResponse[]>("/rooms");
-      data = res.data;
-    } else {
-      const res = await api.get<RoomApiResponse[]>("/rooms/search", {
-        params: {
-          region: regionParam || undefined,
-          type: roomTypeValue || undefined,
-          minPrice:
-            hasCustomPriceRange && Number.isFinite(minPrice)
-              ? minPrice
-              : undefined,
-          maxPrice:
-            hasCustomPriceRange && Number.isFinite(maxPrice)
-              ? maxPrice
-              : undefined,
-          option: optionParam,
-        },
+      if (!hasAnyFilter) {
+        const res = await api.get<RoomApiResponse[]>("/rooms");
+        data = res.data;
+      } else {
+        const res = await api.get<RoomApiResponse[]>("/rooms/search", {
+          params: {
+            region: regionParam || undefined,
+            district: districtValue || undefined,
+            type: roomTypeValue || undefined,
+            minPrice:
+              hasCustomPriceRange && Number.isFinite(minPrice)
+                ? minPrice
+                : undefined,
+            maxPrice:
+              hasCustomPriceRange && Number.isFinite(maxPrice)
+                ? maxPrice
+                : undefined,
+            option: optionParam,
+          },
+        });
+        data = res.data;
+      }
+
+      const list = Array.isArray(data) ? data.map(mapRoomFromApi) : [];
+      const normalized = list.map((room) => {
+        const roomId = getRoomId(room);
+        return {
+          ...room,
+          isFavorite: roomId ? favorites.has(roomId) : false,
+        };
       });
-      data = res.data;
+
+      setRooms(sortRoomsForDisplay(normalized));
+
+      setCurrentPage(1);
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "방 정보를 불러오는 중 오류가 발생했습니다.";
+      setError(message);
+      setRooms([]);
+    } finally {
+      setIsLoading(false);
     }
-
-    const list = Array.isArray(data) ? data.map(mapRoomFromApi) : [];
-    const normalized = list.map((room) => {
-      const roomId = getRoomId(room);
-      return {
-        ...room,
-        isFavorite: roomId ? favorites.has(roomId) : false,
-      };
-    });
-
-    setRooms(normalized);
-  } catch (err) {
-    const message =
-      err instanceof Error
-        ? err.message
-        : "방 정보를 불러오는 중 오류가 발생했습니다.";
-    setError(message);
-    setRooms([]);
-  } finally {
-    setIsLoading(false);
-  }
-}, [keyword, district, roomType, priceRange,selectedFacility, favorites]);
+  }, [keyword, region, district, roomType, priceRange, selectedFacility, favorites]);
 
   useEffect(() => {
     const initialKeyword = searchParams.get("keyword") ?? "";
-    const initialDistrict = searchParams.get("district") ?? "";
+    const initialRegionParam = searchParams.get("region") ?? "";
+    const initialDistrictParam = searchParams.get("district") ?? "";
+    const [parsedRegion, parsedDistrictFromRegion] = initialRegionParam
+      ? [initialRegionParam.split(" ")[0] ?? "", initialRegionParam.split(" ").slice(1).join(" ")]
+      : ["", ""];
+    const initialRegion = parsedRegion || "";
+    const initialDistrict = initialDistrictParam || parsedDistrictFromRegion || "";
     const initialType = searchParams.get("type") ?? "";
     const minParam = searchParams.get("minPrice");
     const maxParam = searchParams.get("maxPrice");
@@ -251,12 +333,14 @@ export default function Rooms() {
     const nextRange = hasCustomRange ? [parsedMin, parsedMax] : undefined;
 
     if (initialKeyword) setKeyword(initialKeyword);
+    if (initialRegion) setRegion(initialRegion);
     if (initialDistrict) setDistrict(initialDistrict);
     if (initialType) setRoomType(initialType);
     if (nextRange) setPriceRange(nextRange);
 
     fetchRooms({
       keyword: initialKeyword || undefined,
+      region: initialRegion || undefined,
       district: initialDistrict || undefined,
       roomType: initialType || undefined,
       priceRange: nextRange,
@@ -275,10 +359,26 @@ export default function Rooms() {
     return () => window.clearTimeout(timer);
   }, [rooms, highlightedRoomId]);
 
+  useEffect(() => {
+    if (!highlightedRoomId) return;
+    const index = rooms.findIndex((room) => getRoomId(room) === highlightedRoomId);
+    if (index === -1) return;
+    const pageOfHighlighted = Math.floor(index / pageSize) + 1;
+    setCurrentPage(pageOfHighlighted);
+  }, [rooms, highlightedRoomId, pageSize]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
   const handleSearch = async (event?: React.FormEvent) => {
     event?.preventDefault();
+    const regionParam = [region, district].filter(Boolean).join(" ");
     const params = new URLSearchParams();
     if (keyword.trim()) params.set("keyword", keyword.trim());
+    if (regionParam) params.set("region", regionParam);
     if (district) params.set("district", district);
     if (roomType) params.set("type", roomType);
     if (
@@ -297,6 +397,7 @@ export default function Rooms() {
   const handleFilterTypeClick = async (clickedType: string) => {
     // "전체" 버튼이면 필터 해제 -> 빈 문자열
     const nextType = clickedType === "전체" ? "" : clickedType;
+    const regionParam = [region, district].filter(Boolean).join(" ");
 
     // 상태 업데이트
     setRoomType(nextType);
@@ -304,6 +405,7 @@ export default function Rooms() {
     // URL 쿼리스트링도 같이 맞춰주기 (위 검색창이랑 동일 로직)
     const params = new URLSearchParams();
     if (keyword.trim()) params.set("keyword", keyword.trim());
+    if (regionParam) params.set("region", regionParam);
     if (district) params.set("district", district);
     if (nextType) params.set("type", nextType);
     if (
@@ -327,11 +429,13 @@ export default function Rooms() {
   const handleFacilityClick = async (facility: string) => {
     // 같은 칩을 한 번 더 누르면 해제
     const nextFacility = selectedFacility === facility ? "" : facility;
+    const regionParam = [region, district].filter(Boolean).join(" ");
 
     setSelectedFacility(nextFacility);
 
     const params = new URLSearchParams();
     if (keyword.trim()) params.set("keyword", keyword.trim());
+    if (regionParam) params.set("region", regionParam);
     if (district) params.set("district", district);
     if (roomType) params.set("type", roomType);
     if (
@@ -484,26 +588,61 @@ export default function Rooms() {
                   placeholder="예: 강남역, 홍대입구"
                   value={keyword}
                   onChange={(event) => setKeyword(event.target.value)}
+                  // 옆에 드롭다운이랑 둥글기 Radius 맞춘다고 추가
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: 3,
+                    },
+                  }}
                 />
-                <Select
-                  value={district}
-                  onChange={(event) =>
-                    setDistrict(event.target.value as string)
-                  }
-                  sx={{ minWidth: 160, borderRadius: 3 }}
+                <Stack
+                  direction={{ xs: "column", md: "row" }}
+                  spacing={1}
+                  sx={{ minWidth: { md: 320 }, maxWidth: { xs: "100%", md: 360 } }}
                 >
-                  {districts.map((item) => (
-                    <MenuItem key={item.value} value={item.value}>
-                      {item.label}
+                  <Select
+                    value={region}
+                    displayEmpty
+                    onChange={(event) => {
+                      const value = event.target.value as string;
+                      setRegion(value);
+                      setDistrict("");
+                    }}
+                    sx={{ minWidth: 140, borderRadius: 3, flex: 1 }}
+                  >
+                    <MenuItem value="">
+                      지역 전체
                     </MenuItem>
-                  ))}
-                </Select>
+                    {provinces.map((option) => (
+                      <MenuItem key={option.value} value={option.value}>
+                        {option.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  <Select
+                    value={district}
+                    displayEmpty
+                    disabled={!region}
+                    onChange={(event) => setDistrict(event.target.value as string)}
+                    sx={{ minWidth: 140, borderRadius: 3, flex: 1 }}
+                  >
+                    <MenuItem value="">
+                      구/읍/면 전체
+                    </MenuItem>
+                    {districtOptions.map((option) => (
+                      <MenuItem key={option} value={option}>
+                        {option}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </Stack>
                 <Select
                   value={roomType}
                   onChange={(event) =>
                     setRoomType(event.target.value as string)
                   }
                   sx={{ minWidth: 160, borderRadius: 3 }}
+                  displayEmpty
                 >
                   {roomTypes.map((item) => (
                     <MenuItem key={item.value} value={item.value}>
@@ -515,7 +654,15 @@ export default function Rooms() {
                   type="submit"
                   variant="contained"
                   startIcon={<Search />}
-                  sx={{ borderRadius: 3, px: 4, py: 1.5 }}
+                  sx={{
+                    borderRadius: 3,
+                    px: { xs: 3, md: 4 },
+                    height: 56,
+                    minWidth: 100,
+                    gap: 1,
+                    alignItems: "center",
+                    whiteSpace: "nowrap",
+                  }}
                   disabled={isLoading}
                 >
                   {isLoading ? "검색 중..." : "검색"}
@@ -672,7 +819,7 @@ export default function Rooms() {
                   </Paper>
                 ) : (
                   <Grid container spacing={3}>
-                    {rooms.map((room) => {
+                    {paginatedRooms.map((room) => {
                       const roomId = getRoomId(room);
                       const isFavorite = roomId ? favorites.has(roomId) : false;
                       const isHighlighted =
@@ -834,11 +981,13 @@ export default function Rooms() {
                 )}
 
                 <Stack direction="row" justifyContent="center" spacing={1}>
-                  {[1, 2, 3].map((page) => (
+                  {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
                     <Button
                       key={page}
-                      variant={page === 1 ? "contained" : "outlined"}
+                      variant={page === currentPage ? "contained" : "outlined"}
+                      onClick={() => setCurrentPage(page)}
                       sx={{ borderRadius: 999, minWidth: 44 }}
+                      disabled={page === currentPage}
                     >
                       {page}
                     </Button>

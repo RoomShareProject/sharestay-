@@ -19,6 +19,7 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
       SELECT r
       FROM Room r
       WHERE (:region IS NULL OR r.address LIKE CONCAT('%', :region, '%'))
+        AND (:district IS NULL OR r.address LIKE CONCAT('%', :district, '%'))
         AND (:type IS NULL OR r.type = :type)
         AND (:minPrice IS NULL OR r.rentPrice >= :minPrice)
         AND (:maxPrice IS NULL OR r.rentPrice <= :maxPrice)
@@ -30,6 +31,7 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
      */
 
     List<Room> searchRooms(
+            @Param("district") String district,
             @Param("region") String region,
             @Param("type") String type,
             @Param("minPrice") Double minPrice,

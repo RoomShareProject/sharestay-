@@ -13,7 +13,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { HomeWork, LocationOn } from "@mui/icons-material";
+import { HomeWork, LocationOn, PeopleAlt } from "@mui/icons-material";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -59,6 +59,15 @@ const roomSchema = z.object({
       (value) => !value || !Number.isNaN(Number(value)),
       "경도는 숫자로 입력해주세요."
     ),
+  preferredGender: z.string().optional(),
+  preferredAge: z.string().optional(),
+  totalMembers: z
+    .string()
+    .optional()
+    .refine(
+      (value) => !value || !Number.isNaN(Number(value)),
+      "총 인원수는 숫자로 선택해주세요."
+    ),
   description: z
     .string()
     .min(10, "상세 설명을 10자 이상 작성해주세요.")
@@ -76,6 +85,31 @@ const roomTypes = [
   { value: "투룸", label: "투룸" },
   { value: "오피스텔", label: "오피스텔" },
   { value: "아파트", label: "아파트" },
+];
+
+const preferredGenderOptions = [
+  { value: "", label: "무관" },
+  { value: "MALE", label: "남성" },
+  { value: "FEMALE", label: "여성" },
+  { value: "NON_BINARY", label: "논바이너리" },
+];
+
+const preferredAgeOptions = [
+  { value: "", label: "무관" },
+  { value: "TEENS", label: "10대" },
+  { value: "TWENTIES", label: "20대" },
+  { value: "THIRTIES", label: "30대" },
+  { value: "FORTIES_PLUS", label: "40대 이상" },
+];
+
+const totalMemberOptions = [
+  { value: "", label: "선택" },
+  { value: "1", label: "1명" },
+  { value: "2", label: "2명" },
+  { value: "3", label: "3명" },
+  { value: "4", label: "4명" },
+  { value: "5", label: "5명" },
+  { value: "6", label: "6명 이상" },
 ];
 
 
@@ -139,6 +173,9 @@ export default function ListRoom() {
       address: "",
       latitude: "",
       longitude: "",
+      preferredGender: "",
+      preferredAge: "",
+      totalMembers: "",
       description: "",
     },
   });
@@ -212,6 +249,9 @@ export default function ListRoom() {
         availabilityStatusMap[
           values.availabilityStatus as RoomAvailabilityStatus
         ] ?? 0;
+      const totalMembersValue = values.totalMembers
+        ? Number(values.totalMembers)
+        : undefined;
 
       const selectedOptions = Array.from(
         new Set([...selectedLifestyle, ...selectedFacilities])
@@ -234,6 +274,9 @@ export default function ListRoom() {
     formData.append("description", composedDescription);
     formData.append("latitude", String(latitudeValue ?? 0));
     formData.append("longitude", String(longitudeValue ?? 0));
+    formData.append("preferredGender", values.preferredGender ?? "");
+    formData.append("preferredAge", values.preferredAge ?? "");
+    formData.append("totalMembers", String(totalMembersValue ?? ""));
 
       // ⭐ 변경 2: 이미지 파일들을 files 필드로 함께 전송
     images.forEach((file) => {
@@ -297,191 +340,247 @@ export default function ListRoom() {
             </Alert>
           )}
 
-          <Paper
-            sx={{
-              p: { xs: 3, md: 4 },
-              borderRadius: 4,
-              boxShadow: "0 24px 48px rgba(15, 40, 105, 0.08)",
-            }}
-            component="form"
-            onSubmit={handleSubmit(onSubmit)}
-          >
-            <Stack spacing={4}>
-              <SectionTitle
-                icon={<HomeWork color="primary" />}
-                title="기본 정보"
-              />
+          <Box component="form" onSubmit={handleSubmit(onSubmit)}>
+            <Stack spacing={3}>
+              <SectionPaper icon={<HomeWork color="primary" />} title="기본 정보">
+                <Grid container spacing={3}>
+                  <Grid xs={12}>
+                    <FormTextField
+                      name="title"
+                      control={control}
+                      label="모집 제목"
+                      placeholder="예: 강남역 도보 5분 깔끔한 원룸 룸메이트 구해요"
+                    />
+                  </Grid>
 
-              <Grid container spacing={3}>
-                <Grid xs={12}>
-                  <FormTextField
-                    name="title"
-                    control={control}
-                    label="모집 제목"
-                    placeholder="예: 강남역 도보 5분 깔끔한 원룸 룸메이트 구해요"
-                  />
-                </Grid>
+                  <Grid xs={12} md={4}>
+                    <FormTextField
+                      name="rentPrice"
+                      control={control}
+                      label="월세 (원)"
+                      placeholder="예: 425000"
+                      inputMode="numeric"
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">₩</InputAdornment>
+                        ),
+                      }}
+                    />
+                  </Grid>
 
-                <Grid xs={12} md={4}>
-                  <FormTextField
-                    name="rentPrice"
-                    control={control}
-                    label="월세 (원)"
-                    placeholder="예: 425000"
-                    inputMode="numeric"
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">₩</InputAdornment>
-                      ),
-                    }}
-                  />
-                </Grid>
-
-                <Grid xs={12} md={4}>
-                  <FormTextField
-                    name="type"
-                    control={control}
-                    label="방 유형"
-                    select
-                    defaultValue=""
-                  >
-                    <MenuItem value="">
-                      <em>방 유형을 선택하세요</em>
-                    </MenuItem>
-                    {roomTypes.map((type) => (
-                      <MenuItem key={type.value} value={type.value}>
-                        {type.label}
+                  <Grid xs={12} md={4}>
+                    <FormTextField
+                      name="type"
+                      control={control}
+                      label="방 유형"
+                      select
+                      defaultValue=""
+                    >
+                      <MenuItem value="">
+                        <em>방 유형을 선택하세요</em>
                       </MenuItem>
-                    ))}
-                  </FormTextField>
-                </Grid>
+                      {roomTypes.map((type) => (
+                        <MenuItem key={type.value} value={type.value}>
+                          {type.label}
+                        </MenuItem>
+                      ))}
+                    </FormTextField>
+                  </Grid>
 
-                <Grid xs={12} md={4}>
-                  <FormTextField
-                    name="availabilityStatus"
-                    control={control}
-                    label="모집 상태"
-                    select
-                  >
-                    {availabilityOptions.map((option) => (
-                      <MenuItem key={option.value} value={option.value}>
-                        {option.label}
-                      </MenuItem>
-                    ))}
-                  </FormTextField>
+                  <Grid xs={12} md={4}>
+                    <FormTextField
+                      name="availabilityStatus"
+                      control={control}
+                      label="모집 상태"
+                      select
+                    >
+                      {availabilityOptions.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </FormTextField>
+                  </Grid>
                 </Grid>
-              </Grid>
+              </SectionPaper>
 
-              <SectionTitle
+              <SectionPaper
                 icon={<LocationOn color="primary" />}
                 title="주소 및 위치"
-              />
-
-              <Grid container spacing={3}>
-                <Grid xs={12}>
-                  <FormTextField
-                    name="address"
-                    control={control}
-                    label="주소"
-                    placeholder="예: 서울특별시 강남구 역삼동 123-45"
-                  />
-                </Grid>
-
-                <Grid xs={12} md={6}>
-                  <FormTextField
-                    name="latitude"
-                    control={control}
-                    label="위도 (선택)"
-                    placeholder="예: 37.4981"
-                  />
-                </Grid>
-
-                <Grid xs={12} md={6}>
-                  <FormTextField
-                    name="longitude"
-                    control={control}
-                    label="경도 (선택)"
-                    placeholder="예: 127.0276"
-                  />
-                </Grid>
-              </Grid>
-
-              <SectionTitle title="생활 패턴" />
-              <CheckboxGroup
-                options={lifestyleOptions}
-                selected={selectedLifestyle}
-                onToggle={(option) =>
-                  toggleSelection(option, setSelectedLifestyle)
-                }
-              />
-
-              <SectionTitle title="부가 옵션" />
-              <CheckboxGroup
-                options={facilityOptions}
-                selected={selectedFacilities}
-                onToggle={(option) =>
-                  toggleSelection(option, setSelectedFacilities)
-                }
-              />
-
-              <SectionTitle title="상세 설명" />
-              <FormTextField
-                name="description"
-                control={control}
-                label="상세 설명"
-                placeholder="룸메이트에 대한 상세한 설명을 작성해주세요. (최소 10자 이상)"
-                multiline
-                minRows={6}
-              />
-
-              <SectionTitle title="사진 업로드" />
-              <Stack spacing={2}>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  style={{ display: "none" }}
-                  ref={fileInputRef}
-                  onChange={handleImagesChange}
-                />
-                <Button variant="outlined" onClick={handleImagePick}>
-                  사진 추가 ({images.length}/6)
-                </Button>
-
-                {images.length > 0 && (
-                  <Stack spacing={0.5}>
-                    {images.map((file) => (
-                      <Typography variant="caption" key={file.name}>
-                        {file.name}
-                      </Typography>
-                    ))}
-                  </Stack>
-                )}
-
-                <Typography variant="caption" color="text.secondary">
-                  최대 6장까지 업로드 가능합니다. (JPG, PNG 형식)
-                </Typography>
-              </Stack>
-
-              <Stack
-                direction={{ xs: "column", sm: "row" }}
-                spacing={2}
-                justifyContent="flex-end"
               >
-                <Button variant="text" onClick={handleReset}>
-                  초기화
-                </Button>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  sx={{ minWidth: 180 }}
-                  disabled={isSubmitting || !canSubmit}
+                <Grid container spacing={3}>
+                  <Grid xs={12}>
+                    <FormTextField
+                      name="address"
+                      control={control}
+                      label="주소"
+                      placeholder="예: 서울특별시 강남구 역삼동 123-45"
+                    />
+                  </Grid>
+
+                  <Grid xs={12} md={6}>
+                    <FormTextField
+                      name="latitude"
+                      control={control}
+                      label="위도 (선택)"
+                      placeholder="예: 37.4981"
+                    />
+                  </Grid>
+
+                  <Grid xs={12} md={6}>
+                    <FormTextField
+                      name="longitude"
+                      control={control}
+                      label="경도 (선택)"
+                      placeholder="예: 127.0276"
+                    />
+                  </Grid>
+                </Grid>
+              </SectionPaper>
+
+              <SectionPaper
+                icon={<PeopleAlt color="primary" />}
+                title="룸메이트 조건"
+              >
+                <Grid container spacing={3}>
+                  <Grid xs={12} md={4}>
+                    <FormTextField
+                      name="preferredGender"
+                      control={control}
+                      label="선호 성별"
+                      select
+                      defaultValue=""
+                    >
+                      {preferredGenderOptions.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </FormTextField>
+                  </Grid>
+
+                  <Grid xs={12} md={4}>
+                    <FormTextField
+                      name="preferredAge"
+                      control={control}
+                      label="선호 연령대"
+                      select
+                      defaultValue=""
+                    >
+                      {preferredAgeOptions.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </FormTextField>
+                  </Grid>
+
+                  <Grid xs={12} md={4}>
+                    <FormTextField
+                      name="totalMembers"
+                      control={control}
+                      label="총 인원수"
+                      select
+                      defaultValue=""
+                    >
+                      {totalMemberOptions.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </FormTextField>
+                  </Grid>
+                </Grid>
+              </SectionPaper>
+
+              <SectionPaper title="생활 패턴">
+                <CheckboxGroup
+                  options={lifestyleOptions}
+                  selected={selectedLifestyle}
+                  onToggle={(option) =>
+                    toggleSelection(option, setSelectedLifestyle)
+                  }
+                />
+              </SectionPaper>
+
+              <SectionPaper title="부가 옵션">
+                <CheckboxGroup
+                  options={facilityOptions}
+                  selected={selectedFacilities}
+                  onToggle={(option) =>
+                    toggleSelection(option, setSelectedFacilities)
+                  }
+                />
+              </SectionPaper>
+
+              <SectionPaper title="상세 설명">
+                <FormTextField
+                  name="description"
+                  control={control}
+                  label="상세 설명"
+                  placeholder="룸메이트에 대한 상세한 설명을 작성해주세요. (최소 10자 이상)"
+                  multiline
+                  minRows={6}
+                />
+              </SectionPaper>
+
+              <SectionPaper title="사진 업로드">
+                <Stack spacing={2}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    style={{ display: "none" }}
+                    ref={fileInputRef}
+                    onChange={handleImagesChange}
+                  />
+                  <Button variant="outlined" onClick={handleImagePick}>
+                    사진 추가 ({images.length}/6)
+                  </Button>
+
+                  {images.length > 0 && (
+                    <Stack spacing={0.5}>
+                      {images.map((file) => (
+                        <Typography variant="caption" key={file.name}>
+                          {file.name}
+                        </Typography>
+                      ))}
+                    </Stack>
+                  )}
+
+                  <Typography variant="caption" color="text.secondary">
+                    최대 6장까지 업로드 가능합니다. (JPG, PNG 형식)
+                  </Typography>
+                </Stack>
+              </SectionPaper>
+
+              <Paper
+                sx={{
+                  p: { xs: 3, md: 4 },
+                  borderRadius: 4,
+                  boxShadow: "0 24px 48px rgba(15, 40, 105, 0.08)",
+                }}
+              >
+                <Stack
+                  direction={{ xs: "column", sm: "row" }}
+                  spacing={2}
+                  justifyContent="flex-end"
                 >
-                  {isSubmitting ? "등록 중..." : "룸메이트 모집하기"}
-                </Button>
-              </Stack>
+                  <Button variant="text" onClick={handleReset}>
+                    초기화
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    sx={{ minWidth: 180 }}
+                    disabled={isSubmitting || !canSubmit}
+                  >
+                    {isSubmitting ? "등록 중..." : "룸메이트 모집하기"}
+                  </Button>
+                </Stack>
+              </Paper>
             </Stack>
-          </Paper>
+          </Box>
         </Stack>
       </Container>
       <SiteFooter />
@@ -506,6 +605,31 @@ function SectionTitle({
         {title}
       </Typography>
     </Stack>
+  );
+}
+
+function SectionPaper({
+  icon,
+  title,
+  children,
+}: {
+  icon?: React.ReactNode;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Paper
+      sx={{
+        p: { xs: 3, md: 4 },
+        borderRadius: 4,
+        boxShadow: "0 24px 48px rgba(15, 40, 105, 0.08)",
+      }}
+    >
+      <Stack spacing={3}>
+        <SectionTitle icon={icon} title={title} />
+        {children}
+      </Stack>
+    </Paper>
   );
 }
 

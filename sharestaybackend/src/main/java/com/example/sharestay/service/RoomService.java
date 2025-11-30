@@ -97,11 +97,21 @@ public class RoomService {
     // 검색 service 로직은 하나로 작성하고 controller에서 나눌 것임
     @Transactional(readOnly = true)
     public List<RoomResponse> searchRooms(
-            String region, String type,
-            Double minPrice, Double maxPrice,
+            String district,
+            String region,
+            String type,
+            Double minPrice,
+            Double maxPrice,
             String option
     ) {
-        List<Room> rooms = roomRepository.searchRooms(region, type, minPrice, maxPrice, option);
+        List<Room> rooms = roomRepository.searchRooms(
+                blankToNull(district),
+                blankToNull(region),
+                blankToNull(type),
+                minPrice,
+                maxPrice,
+                blankToNull(option)
+        );
 
         return rooms.stream()
                 .map(this::toResponse)   // 공통 변환 메서드 사용
@@ -138,6 +148,14 @@ public class RoomService {
                 .stream()
                 .map(this::toResponse)    // Room → RoomResponse 변환
                 .collect(Collectors.toList());
+    }
+
+    private String blankToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     // 방 상세보기
