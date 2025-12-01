@@ -41,17 +41,19 @@ public class RoomController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "방 검색", description = "지역, 유형, 가격 범위, 옵션 조건으로 방을 검색합니다.")
+    // 메인 화면 간단 검색과 필터 검색 통합
+    @Operation(summary = "방 검색", description = "지역, 유형, 가격 범위, 옵션 등 다양한 조건으로 방 목록을 검색합니다.")
     @GetMapping("/search")
-    public ResponseEntity<List<RoomResponse>> searchRooms(
-            @RequestParam(required = false) String region,
-            @RequestParam(required = false) String type,
-            @RequestParam(required = false) Double minPrice,
-            @RequestParam(required = false) Double maxPrice,
-            @RequestParam(required = false) String option
+    public ResponseEntity<List<RoomResponse>> searchRooms(   // 이건 검색 시
+         @RequestParam(required = false) String region,     // 시/광역시 또는 구 단위까지 포함하는 지역명
+         @RequestParam(required = false) String district,   // 하위 구/읍/면
+         @RequestParam(required = false) String type,
+         @RequestParam(required = false) Double minPrice,
+         @RequestParam(required = false) Double maxPrice,
+         @RequestParam(required = false) String option
     ) {
         return ResponseEntity.ok(
-                roomService.searchRooms(region, type, minPrice, maxPrice, option)
+                roomService.searchRooms(region, district, type, minPrice, maxPrice, option)
         );
     }
 
