@@ -321,7 +321,7 @@ public class SharestayApplication implements CommandLineRunner {
             Room room19 = new Room(
                     host1,
                     gu + " " + dong + " 랜덤 방 " + i,
-                    300000 + (int)(Math.random() * 900000),
+                    300000 + (int)(Math.random() * 271) * 10000,
                     "부산광역시 " + gu + " " + dong + " " + i + "-1",
                     type,
                     lat,

@@ -35,8 +35,11 @@ import SiteHeader from "../components/SiteHeader";
 import CloseIcon from "@mui/icons-material/Close";
 import MyLocationIcon from "@mui/icons-material/MyLocation";
 import { api, getAccessToken } from "../lib/api";
-import type { RoomSummary } from "../types/room";
+import type { RoomSummary, RoomImage } from "../types/room";
 import { mapRoomFromApi, resolveRoomImageUrl } from "../types/room";
+
+import fallbackImageSrc from "../img/no_img.jpg";
+const fallbackImage = fallbackImageSrc;
 
 declare global {
   interface Window {
@@ -81,6 +84,7 @@ const RoomMap: React.FC = () => {
   const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null); // 선택된 방 ID 상태
   const [hoveredRoomId, setHoveredRoomId] = useState<number | null>(null); // 마우스 오버된 방 ID 상태
   const highlightOverlayRef = useRef<any>(null); // 강조 효과 오버레이를 관리하기 위한 ref
+  const [modalRoom, setModalRoom] = useState<RoomSummary | null>(null);
 
   const handleToggleFacility = (facility: string) => {
     setFacilities((prev) => {
@@ -215,8 +219,23 @@ const RoomMap: React.FC = () => {
 
         console.log("API 응답 데이터:", data); // [추가] API 응답을 콘솔에서 확인
 
-        const rawRoomList: RoomSummary[] = Array.isArray(data)
-          ? data.map(mapRoomFromApi)
+        // Rooms.tsx를 참고하여, API 응답이 { result: [...] } 형태일 수 있음을 처리합니다.
+        const roomData = Array.isArray(data) ? data : data?.result ?? [];
+
+        const rawRoomList: RoomSummary[] = Array.isArray(roomData)
+          ? roomData.map((room) => {
+              const images: RoomImage[] =
+                room.images?.map((img: any, index: number) => ({
+                  id: img.id ?? index,
+                  imageId: img.id ?? index,
+                  roomId: room.id,
+                  imageUrl: resolveRoomImageUrl(img.imageUrl) ?? fallbackImage,
+                })) ?? [];
+              return {
+                ...mapRoomFromApi(room),
+                images,
+              };
+            })
           : [];
 
         // ID를 기준으로 중복된 방을 제거합니다.
@@ -424,7 +443,7 @@ const RoomMap: React.FC = () => {
   // 선택 또는 호버 변경 시 하이라이트 원을 업데이트하는 useEffect
   useEffect(() => {
     if (!mapInstanceRef.current) return;
-    
+
     // 이전 하이라이트가 있으면 먼저 제거
     if (highlightOverlayRef.current) {
       highlightOverlayRef.current.setMap(null);
@@ -449,7 +468,7 @@ const RoomMap: React.FC = () => {
         ? "rgba(255, 87, 34, 0.3)"
         : "rgba(128, 128, 128, 0.4)";
       content.style.animation = "pulse 1.5s infinite ease-out";
-      
+
       const newHighlightOverlay = new window.kakao.maps.CustomOverlay({
         position: new window.kakao.maps.LatLng(
           roomToHighlight.latitude,
@@ -552,6 +571,94 @@ const RoomMap: React.FC = () => {
     bgcolor: "background.paper",
     boxShadow: 24,
     p: 4,
+  };
+
+  const RoomDetailModal: React.FC<{
+    room: RoomSummary | null;
+    onClose: () => void;
+    onNavigate: (roomId: number) => void;
+  }> = ({ room, onClose, onNavigate }) => {
+    if (!room) return null;
+
+    const imageUrl = resolveRoomImageUrl(room.images?.[0]?.imageUrl);
+
+    console.log("MODAL ROOM IMAGES:", room.images);
+    console.log("MODAL ROOM RAW IMAGE URL:", room.images?.[0]?.imageUrl);
+    console.log("RESOLVED:", resolveRoomImageUrl(room.images?.[0]?.imageUrl));
+    return (
+      <Modal
+        open={!!room}
+        onClose={onClose}
+        aria-labelledby="room-detail-modal-title"
+      >
+        <Box sx={modalStyle}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 2,
+            }}
+          >
+            <Typography
+              id="room-detail-modal-title"
+              variant="h6"
+              component="h2"
+            >
+              방 정보 요약
+            </Typography>
+            <IconButton onClick={onClose} sx={{ p: 0.5 }}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+
+          <Stack spacing={2}>
+            {imageUrl && (
+              <Box
+                component="img"
+                src={imageUrl}
+                alt={room.title}
+                sx={{
+                  width: "100%",
+                  height: 200,
+                  objectFit: "cover",
+                  borderRadius: 2,
+                }}
+              />
+            )}
+
+            <Typography variant="h5" fontWeight={700}>
+              {room.title}
+            </Typography>
+            <Typography variant="h6" color="primary">
+              {room.rentPrice.toLocaleString()}원/월
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              {room.address}
+            </Typography>
+
+            {room.description && (
+              <Typography variant="body2" noWrap textOverflow="ellipsis">
+                {room.description}
+              </Typography>
+            )}
+
+            <Stack direction="row" spacing={2} justifyContent="flex-end" mt={2}>
+              <Button variant="outlined" onClick={onClose}>
+                닫기
+              </Button>
+              <Button
+                variant="contained"
+                onClick={() => room.id && onNavigate(room.id)}
+                disabled={!room.id}
+              >
+                상세 페이지로 이동
+              </Button>
+            </Stack>
+          </Stack>
+        </Box>
+      </Modal>
+    );
   };
 
   // 목록에 표시할 방 목록을 결정합니다.
@@ -678,9 +785,7 @@ const RoomMap: React.FC = () => {
                     }}
                   >
                     <ListItemButton
-                      onClick={() => {
-                        navigate(`/rooms/${room.id}`);
-                      }}
+                      onClick={() => setModalRoom(room)}
                       sx={{
                         borderLeft:
                           hoveredRoomId === room.id
@@ -690,14 +795,19 @@ const RoomMap: React.FC = () => {
                           hoveredRoomId === room.id ? "12px" : "16px",
                       }}
                     >
-                      <ListItemAvatar>
-                        <Avatar
-                          variant="rounded"
-                          src={resolveRoomImageUrl(room.images?.[0]?.imageUrl)}
-                          alt={room.title}
-                          sx={{ width: 56, height: 56, mr: 1 }}
-                        />
-                      </ListItemAvatar>
+                      <Box
+                        component="img"
+                        src={resolveRoomImageUrl(room.images?.[0]?.imageUrl)}
+                        alt={room.title}
+                        sx={{
+                          width: 170,
+                          height: 150,
+                          borderRadius: 2,
+                          objectFit: "cover",
+                          mr: 2,
+                          flexShrink: 0,
+                        }}
+                      />
                       <ListItemText
                         primary={room.title}
                         secondary={`${room.rentPrice.toLocaleString()}원 | ${
@@ -734,6 +844,11 @@ const RoomMap: React.FC = () => {
             )}
           </Box>
         )}
+        <RoomDetailModal
+          room={modalRoom}
+          onClose={() => setModalRoom(null)}
+          onNavigate={(roomId) => navigate(`/rooms/${roomId}`)}
+        />
         {/* 필터 모달 */}
         <Modal
           open={isFilterModalOpen}
