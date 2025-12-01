@@ -25,7 +25,7 @@ export type RoomAvailabilityStatus = "AVAILABLE" | "UNAVAILABLE" | "PENDING";
 
 export interface RoomSummary {
   roomId?: number;
-  id?: number;
+  id?: number | null;
   hostId?: number | null;
   hostUserId?: number | null;
   preferredGender?: string | null;

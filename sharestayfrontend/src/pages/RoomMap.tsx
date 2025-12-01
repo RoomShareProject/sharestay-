@@ -283,16 +283,14 @@ const RoomMap: React.FC = () => {
         const rawRoomList: RoomSummary[] = Array.isArray(roomData)
           ? roomData.map((apiRoom, index) => {
               const room = mapRoomFromApi(apiRoom);
-
-              // API 응답에 id가 없거나 mapRoomFromApi 후에도 id가 null인 경우,
-              // 고유한 임시 ID를 부여하여 Map deduplication에서 데이터가 유실되지 않도록 합니다.
-              // 또한, roomId도 함께 설정하여 일관성을 유지합니다.
-              if (room.id == null) {
-                // 위도, 경도, 인덱스를 조합하여 임시 ID 생성
-                const tempId = `temp-${room.latitude ?? 'noLat'}-${room.longitude ?? 'noLng'}-${index}`;
-                room.id = tempId as any; // RoomSummary.id는 number | undefined 이므로 as any 사용
-                room.roomId = tempId as any; // roomId도 함께 설정
+              // mapRoomFromApi에서 roomId가 매핑되지 않는 경우를 대비해 직접 할당합니다.
+              if (room.roomId === undefined && apiRoom.roomId !== undefined) {
+                room.roomId = apiRoom.roomId;
+                room.id = apiRoom.roomId;
+                room.totalMembers = apiRoom.availabilityStatus
+                room.hostId = apiRoom.hostId;
               }
+
 
               return room;
             })
@@ -641,9 +639,10 @@ const RoomMap: React.FC = () => {
 
     const imageUrl = resolveRoomImageUrl(room.images?.[0]?.imageUrl);
 
-    console.log("MODAL ROOM IMAGES:", room.images);
-    console.log("MODAL ROOM RAW IMAGE URL:", room.images?.[0]?.imageUrl);
-    console.log("RESOLVED:", resolveRoomImageUrl(room.images?.[0]?.imageUrl));
+    // 이미지 출력 확인용
+    // console.log("MODAL ROOM IMAGES:", room.images);
+    // console.log("MODAL ROOM RAW IMAGE URL:", room.images?.[0]?.imageUrl);
+    // console.log("RESOLVED:", resolveRoomImageUrl(room.images?.[0]?.imageUrl));
     return (
       <Modal
         open={!!room}
@@ -830,7 +829,7 @@ const RoomMap: React.FC = () => {
               ) : (
                 displayedRooms.map((room) => [
                   <ListItem
-                    key={room.id}
+                    key={room.roomId ?? room.id}
                     id={`room-item-${room.id}`}
                     disablePadding
                     onMouseEnter={() => setHoveredRoomId(room.id)}

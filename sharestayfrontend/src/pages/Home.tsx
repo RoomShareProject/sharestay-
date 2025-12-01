@@ -36,7 +36,7 @@ const heroBackground =
 
 const navLinks = [
   { label: "방 찾기", href: "/rooms" },
-  { label: "안전도 지도", href: "/safety-map" },
+  { label: "지도", href: "/RoomMap" },
   { label: "이용방법", href: "/guide" },
   {
     label: "방 등록",
