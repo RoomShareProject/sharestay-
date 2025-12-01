@@ -55,11 +55,11 @@ public class RoomService {
 
     @Transactional(readOnly = true)
     public List<RoomResponse> searchRooms(
-            String region, String type,
-            String s, Double minPrice, Double maxPrice,
+            String region, String district, String type,
+            Double minPrice, Double maxPrice,
             String option
     ) {
-        List<Room> rooms = roomRepository.searchRooms(region, type, minPrice, maxPrice, option);
+        List<Room> rooms = roomRepository.searchRooms(district, region, type, minPrice, maxPrice, option);
 
         return rooms.stream()
                 .map(this::toResponse)

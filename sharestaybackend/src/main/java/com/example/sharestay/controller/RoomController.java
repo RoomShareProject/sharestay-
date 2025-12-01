@@ -53,7 +53,7 @@ public class RoomController {
          @RequestParam(required = false) String option
     ) {
         return ResponseEntity.ok(
-                roomService.searchRooms(district, region, type, minPrice, maxPrice, option)
+                roomService.searchRooms(region, district, type, minPrice, maxPrice, option)
         );
     }
 

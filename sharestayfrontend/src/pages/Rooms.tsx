@@ -239,7 +239,6 @@ export default function Rooms() {
       const keywordValue = overrides?.keyword ?? keyword;
       const regionValue = overrides?.region ?? region;
       const districtValue = overrides?.district ?? district;
-      const regionParam = [regionValue, districtValue].filter(Boolean).join(" ");
       const roomTypeValue = overrides?.roomType ?? roomType;
       const priceRangeValue = overrides?.priceRange ?? priceRange;
       const [minPrice, maxPrice] = priceRangeValue;
@@ -259,7 +258,8 @@ export default function Rooms() {
           : undefined);
 
       const hasAnyFilter =
-        (regionParam && regionParam.trim().length > 0) ||
+        (regionValue && regionValue.trim().length > 0) ||
+        (districtValue && districtValue.trim().length > 0) ||
         (roomTypeValue && roomTypeValue.trim().length > 0) ||
         (keywordValue && keywordValue.trim().length > 0) ||
         (facilityValue && facilityValue.trim().length > 0) ||  // ⭐ 추가
@@ -273,7 +273,7 @@ export default function Rooms() {
       } else {
         const res = await api.get<RoomApiResponse[]>("/rooms/search", {
           params: {
-            region: regionParam || undefined,
+            region: regionValue || undefined,
             district: districtValue || undefined,
             type: roomTypeValue || undefined,
             minPrice:
@@ -318,11 +318,8 @@ export default function Rooms() {
     const initialKeyword = searchParams.get("keyword") ?? "";
     const initialRegionParam = searchParams.get("region") ?? "";
     const initialDistrictParam = searchParams.get("district") ?? "";
-    const [parsedRegion, parsedDistrictFromRegion] = initialRegionParam
-      ? [initialRegionParam.split(" ")[0] ?? "", initialRegionParam.split(" ").slice(1).join(" ")]
-      : ["", ""];
-    const initialRegion = parsedRegion || "";
-    const initialDistrict = initialDistrictParam || parsedDistrictFromRegion || "";
+    const initialRegion = initialRegionParam || "";
+    const initialDistrict = initialDistrictParam || "";
     const initialType = searchParams.get("type") ?? "";
     const minParam = searchParams.get("minPrice");
     const maxParam = searchParams.get("maxPrice");
@@ -375,10 +372,9 @@ export default function Rooms() {
 
   const handleSearch = async (event?: React.FormEvent) => {
     event?.preventDefault();
-    const regionParam = [region, district].filter(Boolean).join(" ");
     const params = new URLSearchParams();
     if (keyword.trim()) params.set("keyword", keyword.trim());
-    if (regionParam) params.set("region", regionParam);
+    if (region) params.set("region", region);
     if (district) params.set("district", district);
     if (roomType) params.set("type", roomType);
     if (
@@ -397,7 +393,6 @@ export default function Rooms() {
   const handleFilterTypeClick = async (clickedType: string) => {
     // "전체" 버튼이면 필터 해제 -> 빈 문자열
     const nextType = clickedType === "전체" ? "" : clickedType;
-    const regionParam = [region, district].filter(Boolean).join(" ");
 
     // 상태 업데이트
     setRoomType(nextType);
@@ -405,7 +400,7 @@ export default function Rooms() {
     // URL 쿼리스트링도 같이 맞춰주기 (위 검색창이랑 동일 로직)
     const params = new URLSearchParams();
     if (keyword.trim()) params.set("keyword", keyword.trim());
-    if (regionParam) params.set("region", regionParam);
+    if (region) params.set("region", region);
     if (district) params.set("district", district);
     if (nextType) params.set("type", nextType);
     if (
@@ -429,13 +424,12 @@ export default function Rooms() {
   const handleFacilityClick = async (facility: string) => {
     // 같은 칩을 한 번 더 누르면 해제
     const nextFacility = selectedFacility === facility ? "" : facility;
-    const regionParam = [region, district].filter(Boolean).join(" ");
 
     setSelectedFacility(nextFacility);
 
     const params = new URLSearchParams();
     if (keyword.trim()) params.set("keyword", keyword.trim());
-    if (regionParam) params.set("region", regionParam);
+    if (region) params.set("region", region);
     if (district) params.set("district", district);
     if (roomType) params.set("type", roomType);
     if (
