@@ -29,6 +29,47 @@ public class RoomService {
     private final FirebaseService firebaseService;
     private final FavoriteRepository favoriteRepository;
 
+
+    // 상세보기
+    @Transactional(readOnly = true)
+    public RoomDetailResponse getRoomDetail(Long roomId) {
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("Room not found"));
+
+        List<String> imageUrls = roomImageRepository.findByRoomId(roomId)
+                .stream()
+                .map(RoomImage::getImageUrl)
+                .collect(Collectors.toList());
+
+        Long hostId = room.getHost() != null ? room.getHost().getId() : null;
+        Long hostUserId = (room.getHost() != null && room.getHost().getUser() != null)
+                ? room.getHost().getUser().getId()
+                : null;
+
+        return new RoomDetailResponse(
+                room.getId(),
+                room.getTitle(),
+                room.getRentPrice(),
+                room.getAddress(),
+                room.getType(),
+                room.getAvailabilityStatus(),
+                room.getDescription(),
+                room.getPreferredGender(),
+                room.getPreferredAge(),
+                room.getTotalMembers(),
+                room.getLifestyleAsList(),
+                room.getOptionsAsList(),
+                room.getLatitude(),
+                room.getLongitude(),
+                imageUrls,
+                room.getShareLink() != null ? room.getShareLink().getLinkUrl() : null,
+                hostId,
+                hostUserId
+        );
+    }
+
+
+    // 방 등록
     @Transactional
     public RoomResponse createRoom(RoomRequest request, List<MultipartFile> files) {
         Host host = hostRepository.findById(request.getHostId())
@@ -52,6 +93,7 @@ public class RoomService {
         Room savedRoom = roomRepository.save(room);
         return toResponse(savedRoom);
     }
+
 
     @Transactional(readOnly = true)
     public List<RoomResponse> searchRooms(
@@ -100,42 +142,7 @@ public class RoomService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional(readOnly = true)
-    public RoomDetailResponse getRoomDetail(Long roomId) {
-        Room room = roomRepository.findById(roomId)
-                .orElseThrow(() -> new IllegalArgumentException("Room not found"));
 
-        List<String> imageUrls = roomImageRepository.findByRoomId(roomId)
-                .stream()
-                .map(RoomImage::getImageUrl)
-                .collect(Collectors.toList());
-
-        Long hostId = room.getHost() != null ? room.getHost().getId() : null;
-        Long hostUserId = (room.getHost() != null && room.getHost().getUser() != null)
-                ? room.getHost().getUser().getId()
-                : null;
-
-        return new RoomDetailResponse(
-                room.getId(),
-                room.getTitle(),
-                room.getRentPrice(),
-                room.getAddress(),
-                room.getType(),
-                room.getAvailabilityStatus(),
-                room.getDescription(),
-                room.getPreferredGender(),
-                room.getPreferredAge(),
-                room.getTotalMembers(),
-                room.getLifestyleAsList(),
-                room.getOptionsAsList(),
-                room.getLatitude(),
-                room.getLongitude(),
-                imageUrls,
-                room.getShareLink() != null ? room.getShareLink().getLinkUrl() : null,
-                hostId,
-                hostUserId
-        );
-    }
 
     /**
      * 마이그레이션 용도: 기존 방들 중 공유 링크가 없는 경우 기본 ShareLink를 채워 넣습니다.
