@@ -66,8 +66,8 @@ public class MapService {
 
     // 지도 경계 기반 근처 방 조회 (사각형 기준)
     public List<MapDto> getRoomsInBoundary(
-            double swLat, double swLng, double neLat, double neLng,
-            double minPrice, double maxPrice, String type, List<String> options
+        double swLat, double swLng, double neLat, double neLng,
+        double minPrice, double maxPrice, String type, List<String> options
     ) {
         // 1. Repository를 통해 위치와 가격 기준으로 1차 필터링된 방 목록을 가져옵니다.
         List<Room> rooms = roomRepository.findRoomsInBoundary(swLat, swLng, neLat, neLng, minPrice, maxPrice);
