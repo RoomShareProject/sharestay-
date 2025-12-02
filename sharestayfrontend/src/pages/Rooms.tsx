@@ -155,7 +155,11 @@ const availabilityLabel = (status: RoomSummary["availabilityStatus"]) => {
   return "모집중";
 };
 
-const getRoomId = (room: RoomSummary) => room.roomId ?? room.id ?? null;
+const getRoomId = (room: RoomSummary) => {
+  const raw = room.roomId ?? room.id;
+  const num = Number(raw);
+  return Number.isFinite(num) ? num : null;
+};
 
 const isClosedStatus = (status: RoomSummary["availabilityStatus"]) => {
   if (typeof status === "number") return status >= 2;
@@ -481,9 +485,8 @@ export default function Rooms() {
       const favoriteRooms = await fetchFavoriteRooms(user.id);
       const next = new Set<number>();
       favoriteRooms.forEach((item) => {
-        if (typeof item.roomId === "number") {
-          next.add(item.roomId);
-        }
+        const id = Number(item.roomId);
+        if (Number.isFinite(id)) next.add(id);
       });
       setFavorites(next);
       setRooms((prev) =>

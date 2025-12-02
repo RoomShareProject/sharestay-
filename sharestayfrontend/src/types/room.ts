@@ -43,7 +43,7 @@ export interface RoomSummary {
   safetyScore?: number;
   trustScore?: number;
   tags?: string[];
-  isFavorite?: boolean;
+  isFavorite?: boolean;   // ✅ 여길 실제로 채워줄 거임
   favoriteId?: number;
   options?: string[] | string | null;
   images?: RoomImage[];
@@ -88,6 +88,10 @@ export interface RoomApiResponse {
   imageUrls?: string[];
   shareLinkUrl?: string | null;
   shareLink?: { linkUrl?: string | null };
+
+  // ✅ 백엔드에서 좋아요 정보 내려줄 때 받을 용도
+  isFavorite?: boolean;
+  favoriteId?: number | null;
 }
 
 export interface RoomDetailApiResponse {
@@ -111,6 +115,10 @@ export interface RoomDetailApiResponse {
   imageUrls?: string[];
   shareLinkUrl?: string | null;
   shareLink?: { linkUrl?: string | null };
+
+  // ✅ 상세 API에도 옵션으로 붙을 수 있으니 같이 둠
+  isFavorite?: boolean;
+  favoriteId?: number | null;
 }
 
 export interface ShareLinkResponse {
@@ -120,7 +128,9 @@ export interface ShareLinkResponse {
 export const mapRoomFromApi = (
   room: RoomApiResponse | RoomDetailApiResponse
 ): RoomSummary => {
-  const roomId = room.roomId ?? room.id;
+  const rawRoomId = (room as any).roomId ?? room.id;
+  const parsedRoomId = Number(rawRoomId);
+  const roomId = Number.isFinite(parsedRoomId) ? parsedRoomId : undefined;
 
   const normalizedImages: RoomImage[] =
     room.images?.map((image) => ({
@@ -132,14 +142,14 @@ export const mapRoomFromApi = (
     room.imageUrls?.map((url, index) => ({
       id: index,
       imageId: index,
-      roomId: room.id,
+      roomId: roomId,
       imageUrl: resolveRoomImageUrl(url) ?? url ?? "",
     })) ??
     [];
 
   return {
-    roomId: room.id,
-    id: room.id,
+    roomId: roomId,
+    id: roomId ?? room.id,
     hostId: "hostId" in room ? room.hostId : undefined,
     hostUserId: "hostUserId" in room ? room.hostUserId : undefined,
     preferredGender: "preferredGender" in room ? room.preferredGender : undefined,
@@ -157,5 +167,12 @@ export const mapRoomFromApi = (
     options: "options" in room ? room.options : undefined,
     images: normalizedImages,
     shareLinkUrl: room.shareLinkUrl ?? room.shareLink?.linkUrl ?? undefined,
+
+    // ✅ 여기서부터 좋아요 정보 매핑
+    isFavorite:
+      "isFavorite" in room
+        ? room.isFavorite ?? (("favoriteId" in room && room.favoriteId != null) ? true : undefined)
+        : undefined,
+    favoriteId: "favoriteId" in room ? room.favoriteId ?? undefined : undefined,
   };
 };
