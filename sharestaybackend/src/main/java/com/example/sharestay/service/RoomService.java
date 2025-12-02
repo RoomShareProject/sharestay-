@@ -94,7 +94,7 @@ public class RoomService {
         return toResponse(savedRoom);
     }
 
-
+    // 검색(간단 검색 / 필터 검색 통합)
     @Transactional(readOnly = true)
     public List<RoomResponse> searchRooms(
             String region, String district, String type,
@@ -107,6 +107,7 @@ public class RoomService {
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
+
 
     @Transactional
     public RoomResponse updateRoom(Long roomId, RoomRequest request) {
@@ -126,6 +127,7 @@ public class RoomService {
         roomRepository.delete(room);
     }
 
+    // 그냥 전체 목록만 불러오기
     @Transactional(readOnly = true)
     public List<RoomResponse> getRoomList() {
         return roomRepository.findAll()
