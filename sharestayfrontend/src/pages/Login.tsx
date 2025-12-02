@@ -16,10 +16,6 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "../auth/useAuth";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
-//======= 구글 관련 추가 import =======
-import axios from "axios"; 
-import { setStoredUsername } from "../lib/api"; 
-import { useEffect } from "react"; 
 
 const GOOGLE_OAUTH2_URL = "http://localhost:8080/oauth2/authorization/google";
 
@@ -35,7 +31,6 @@ type FormValues = z.infer<typeof schema>;
 
 export default function Login() {
   const { login } = useAuth();
-  const navigate = useNavigate();
 
   const {
     handleSubmit,
@@ -52,41 +47,41 @@ export default function Login() {
     } catch (err: any) {
       console.error("[Login] 로그인 실패:", err);
 
-      if (err?.response?.status === 403) {
-        const message = err.response.data?.message ?? "정지된 계정입니다.";
-        alert(message);
-        window.location.href = "/login";
+      const status = err?.response?.status;
+      const data = err?.response?.data ?? {};
+      const apiMessage =
+        typeof data === "string" ? data : data?.message ?? null;
+      const endDate =
+        typeof data === "object" && "endDate" in data ? data.endDate : null;
+      const isPermanent =
+        typeof data === "object" && "permanent" in data ? Boolean(data.permanent) : false;
+
+      if (status === 401) {
+        alert(apiMessage ?? "아이디 또는 비밀번호가 올바르지 않습니다.");
+        return;
+      }
+
+      if (status === 403) {
+        const banInfo = endDate
+          ? `정지된 계정입니다. 정지 해제 예정: ${new Date(endDate).toLocaleString()}`
+          : isPermanent
+          ? "영구정지 계정입니다. 관리자에게 문의하세요."
+          : "";
+        alert(
+          [apiMessage ?? banInfo].filter(Boolean).join("\n")
+        );
         return;
       }
 
       if (err?.response) {
-        console.error("[Login] status:", err.response.status);
+        console.error("[Login] status:", status);
         console.error("[Login] data:", err.response.data);
-        alert(`로그인 실패 (${err.response.status})`);
+        alert(apiMessage ?? `로그인 실패 (${status})`);
       } else {
-        alert("로그인 중 오류가 발생했습니다. 콘솔을 확인해 주세요.");
+        alert("로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
       }
     }
   };
-
-  //===== 구글 로그인 redirect 처리
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get("code"); // 백엔드에서 보내는 code
-
-    if (code) {
-      // 백엔드가 쿠키에 access/refresh 넣어주므로 프론트에서 토큰 직접 처리 불필요
-      axios
-        .get("/api/me", { withCredentials: true }) // 쿠키 포함 요청
-        .then((res) => {
-          setStoredUsername(res.data.username); // 사용자 정보 저장
-        })
-        .finally(() => {
-          navigate("/", { replace: true }); // 홈으로 이동
-        });
-    }
-  }, [navigate]);
-
   //===== 구글 로그인 버튼 클릭
   const handleGoogleLogin = () => {
     window.location.href = GOOGLE_OAUTH2_URL;
