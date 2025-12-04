@@ -7,7 +7,7 @@ import MyLocationIcon from "@mui/icons-material/MyLocation";
 import { api, getAccessToken } from "../lib/api";
 import type { RoomSummary } from "../types/room";
 import { useAuth } from "../auth/useAuth";
-import { mapRoomFromApi, resolveRoomImageUrl, } from "../types/room"; // RoomApiResponse 추가
+import { mapRoomFromApi, resolveRoomImageUrl, } from "../types/room";
 import {
   provinces,
   provinceDistrictMap,
