@@ -2,10 +2,6 @@ import {
   Box,
   Button,
   Chip,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   MenuItem,
   Paper,
   Stack,
@@ -16,7 +12,6 @@ import {
   TableRow,
   TextField,
   Typography,
-  CircularProgress,
   Alert,
 } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
@@ -322,6 +317,7 @@ export default function AdminBans() {
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
                   fullWidth
+                  InputLabelProps={{ shrink: true }}
                 />
                 <Stack direction="row" spacing={1} flexWrap="wrap">
                   <Button variant="outlined" size="small" onClick={() => handleDurationPreset("1d", setEndDate)}>
