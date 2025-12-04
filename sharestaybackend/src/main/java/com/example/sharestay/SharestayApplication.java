@@ -74,7 +74,7 @@ public class SharestayApplication implements CommandLineRunner {
     -------------------------- */
         User hostUser1 = new User(
                 "host1@test.com",
-                encoder.encode("user1234"),
+                encoder.encode("user1234챙ㄷ"),
                 "LOCAL",
                 "홍대 호스트",
                 "서울 마포구",

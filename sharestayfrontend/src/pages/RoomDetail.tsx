@@ -23,6 +23,10 @@ import { mapRoomFromApi, resolveRoomImageUrl } from "../types/room";
 import fallbackImageSrc from "../img/no_img.jpg";
 import ShareIcon from "@mui/icons-material/Share";
 import SectionPaper from "../components/SectionPaper";
+import FavoriteButton from "../components/FavoriteButton";
+import { useAuth } from "../auth/useAuth";
+import { fetchFavoriteRooms, toggleFavoriteRoom } from "../lib/favorites";
+
 import Grid from "@mui/material/Unstable_Grid2";
 
 const fallbackImage = fallbackImageSrc;
@@ -175,10 +179,14 @@ const ageLabel = (value?: string | null) => {
 };
 
 export default function RoomDetail() {
+  const { user } = useAuth(); // ⭐ 추가: 로그인 사용자 정보
+  const [favorites, setFavorites] = useState<Set<number>>(new Set()); // ⭐ 추가
+
   const { roomId } = useParams<{ roomId: string }>();
 
   const [room, setRoom] = useState<RoomSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeImage, setActiveImage] = useState<string>(fallbackImage);
   const [shareLink, setShareLink] = useState<string | null>(null);
@@ -254,6 +262,14 @@ export default function RoomDetail() {
         setActiveImage(images[0]?.imageUrl ?? fallbackImage);
         console.log(images);
 
+        // API에서 좋아요 여부 내려주면 즉시 반영
+        if (mapped.isFavorite) {
+          setFavorites((prev) => {
+            const next = new Set(prev);
+            next.add(mapped.roomId);
+            return next;
+          });
+        }
 
         // 🔴 공유 링크 state에도 저장
       // 1순위: DTO에 있는 shareLinkUrl
@@ -275,9 +291,24 @@ export default function RoomDetail() {
     fetchRoom();
   }, [roomId]);
 
-  
+    // ⭐ 추가: 로그인 되어 있으면 즐겨찾기 목록 불러오기
+  useEffect(() => {
+    if (!user?.id) return;
 
-  // ✅ 수정본
+    const loadFavorites = async () => {
+      const favList = await fetchFavoriteRooms(user.id);
+
+      const next = new Set<number>();
+      favList.forEach((f) => next.add(Number(f.roomId)));
+
+      setFavorites(next);
+    };
+
+    loadFavorites();
+  }, [user?.id]);
+
+
+// ✅ 수정본
 const handleShareLink = async () => {
   // roomId 없어도 사실 복사엔 상관 없지만, 안전하게 체크
   if (!roomId) return;
@@ -307,6 +338,60 @@ const handleShareLink = async () => {
     window.prompt("이 링크를 복사해 주세요.", link);
   } finally {
     setIsShareGenerating(false);
+  }
+};
+
+
+const isLiked = room
+  ? favorites.has(room.roomId) || room.isFavorite === true
+  : false;
+
+
+// ⭐ 추가: 좋아요 토글
+const handleToggleFavorite = async (nextLiked?: boolean) => {
+  if (!user?.id) {
+    alert("로그인이 필요합니다.");
+    return;
+  }
+
+  const roomNum = Number(room?.roomId);
+  if (!roomNum) return;
+
+  if (isFavoriteLoading) return;
+
+  const targetLiked =
+    typeof nextLiked === "boolean" ? nextLiked : !isLiked;
+  const currentlyLiked = !targetLiked;
+
+  // UI 즉시 반영
+  setFavorites((prev) => {
+    const next = new Set(prev);
+    targetLiked ? next.add(roomNum) : next.delete(roomNum);
+    return next;
+  });
+
+  setRoom((prev) =>
+    prev ? { ...prev, isFavorite: targetLiked } : prev
+  );
+
+  // 서버 반영
+  setIsFavoriteLoading(true);
+  try {
+    await toggleFavoriteRoom(user.id, roomNum);
+  } catch (err) {
+    console.error(err);
+    alert("찜하기 처리 중 오류가 발생했습니다.");
+    // 롤백
+    setFavorites((prev) => {
+      const next = new Set(prev);
+      currentlyLiked ? next.add(roomNum) : next.delete(roomNum);
+      return next;
+    });
+    setRoom((prev) =>
+      prev ? { ...prev, isFavorite: currentlyLiked } : prev
+    );
+  } finally {
+    setIsFavoriteLoading(false);
   }
 };
 
@@ -585,6 +670,14 @@ const handleShareLink = async () => {
 
                   {/* 버튼들 */}
                   <Stack spacing={1.5}>
+                   {/* ⭐ 찜 버튼 추가 */}
+                    <FavoriteButton 
+                      roomId={room.roomId} 
+                      isLiked={isLiked} 
+                      loading={isFavoriteLoading}
+                      onToggle={handleToggleFavorite}
+                    />
+
                     <Button
                       fullWidth
                       variant="contained"

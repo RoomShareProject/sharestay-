@@ -36,6 +36,7 @@ import {
 import { useAuth } from "../auth/useAuth";
 import SiteFooter from "../components/SiteFooter";
 import SiteHeader from "../components/SiteHeader";
+import FavoriteButton from "../components/FavoriteButton";
 import { api } from "../lib/api";
 import { fetchFavoriteRooms, toggleFavoriteRoom } from "../lib/favorites";
 import type { RoomApiResponse, RoomSummary } from "../types/room";
@@ -981,16 +982,11 @@ export default function Rooms() {
                               >
                                 공유 링크
                               </Button>
-                              <IconButton
-                                onClick={(event) => {
-                                  event.stopPropagation(); // 카드 클릭으로 인한 네비게이션 막기
-                                  toggleFavorite(room);
-                                }}
-                                color={isFavorite ? "error" : "default"}
-                                aria-label="즐겨찾기"
-                              >
-                                {isFavorite ? <Favorite /> : <FavoriteBorder />}
-                              </IconButton>
+                              <FavoriteButton
+                                  roomId={roomId!}
+                                  isLiked={isFavorite}
+                                  onToggle={() => toggleFavorite(room)}
+                                />
                             </CardActions>
                           </Card>
                         </Grid>

@@ -24,7 +24,7 @@ export interface RoomImage {
 export type RoomAvailabilityStatus = "AVAILABLE" | "UNAVAILABLE" | "PENDING";
 
 export interface RoomSummary {
-  roomId?: number;
+  roomId: number;
   id?: number | null;
   hostId?: number | null;
   hostUserId?: number | null;
@@ -131,7 +131,7 @@ export const mapRoomFromApi = (
 ): RoomSummary => {
   const rawRoomId = (room as any).roomId ?? room.id;
   const parsedRoomId = Number(rawRoomId);
-  const roomId = Number.isFinite(parsedRoomId) ? parsedRoomId : undefined;
+  const roomId = Number.isFinite(parsedRoomId) ? parsedRoomId : room.id;
 
   const normalizedImages: RoomImage[] =
     room.images?.map((image) => ({
@@ -147,6 +147,11 @@ export const mapRoomFromApi = (
       imageUrl: resolveRoomImageUrl(url) ?? url ?? "",
     })) ??
     [];
+
+  const shareLinkUrl =
+    room.shareLinkUrl ??
+    room.shareLink?.linkUrl ??
+    (roomId ? `${window.location.origin}/rooms/${roomId}` : undefined);
 
   return {
     roomId: roomId,
@@ -167,13 +172,8 @@ export const mapRoomFromApi = (
     description: room.description,
     options: "options" in room ? room.options : undefined,
     images: normalizedImages,
-    shareLinkUrl: room.shareLinkUrl ?? room.shareLink?.linkUrl ?? undefined,
-
-    // ✅ 여기서부터 좋아요 정보 매핑
-    isFavorite:
-      "isFavorite" in room
-        ? room.isFavorite ?? (("favoriteId" in room && room.favoriteId != null) ? true : undefined)
-        : undefined,
+    shareLinkUrl,
+    isFavorite: "isFavorite" in room ? room.isFavorite : undefined,
     favoriteId: "favoriteId" in room ? room.favoriteId ?? undefined : undefined,
   };
 };
