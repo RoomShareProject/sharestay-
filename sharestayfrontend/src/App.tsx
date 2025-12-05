@@ -18,7 +18,6 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Profile from "./pages/Profile";
-import AdminUsers from "./pages/AdminUsers";
 import Guide from "./pages/Guide";
 import Rooms from "./pages/Rooms";
 import RoomDetail from "./pages/RoomDetail";
@@ -27,7 +26,6 @@ import EditRoom from "./pages/EditRoom";
 import ForgotPassword from "./pages/ForgotPassword";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
-import SafetyMap from "./pages/SafetyMap";
 import LifestyleSetup from "./pages/LifestyleSetup";
 import LoginSuccess from "./pages/LoginSuccess";
 import ProtectedRoute from "./routes/ProtectedRoute";
@@ -75,58 +73,59 @@ function App() {
           <CssBaseline />
           <BrowserRouter>
             <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
             <Route path="/login-success" element={<LoginSuccess />} />
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/guide" element={<Guide />} />
-            <Route path="/rooms" element={<Rooms />} />
-            <Route path="/rooms/:roomId" element={<RoomDetail />} />
-            <Route path="/RoomMap" element={<RoomMap />} />
-            <Route
-              path="/list-room"
-              element={
-                <ProtectedRoute requireRoles={["HOST", "ADMIN"]}>
-                  <ListRoom />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/edit-room/:roomId"
-              element={
-                <ProtectedRoute requireRoles={["HOST", "ADMIN"]}>
-                  <EditRoom />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/safety-map" element={<SafetyMap />} />
-            <Route
-              path="/lifestyle"
-              element={
-                <ProtectedRoute>
-                  <LifestyleSetup />
-                </ProtectedRoute>
-              }
-            />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute requireRoles={["ADMIN"]}>
-                  <AdminDashboard />
-                </ProtectedRoute>
-              }
-            />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/guide" element={<Guide />} />
+              <Route path="/rooms" element={<Rooms />} />
+              <Route path="/rooms/:roomId" element={<RoomDetail />} />
+              <Route path="/RoomMap" element={<RoomMap />} />
+              <Route
+                path="/list-room"
+                element={
+                  <ProtectedRoute requireRoles={["HOST", "ADMIN"]}>
+                    <ListRoom />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/edit-room/:roomId"
+                element={
+                  <ProtectedRoute requireRoles={["HOST", "ADMIN"]}>
+                    <EditRoom />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/RoomMap" element={<RoomMap />} />
+              {/* <Route path="/safety-map" element={<SafetyMap />} /> */}
+              <Route
+                path="/lifestyle"
+                element={
+                  <ProtectedRoute>
+                    <LifestyleSetup />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute requireRoles={["ADMIN"]}>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
             </Routes>
           </BrowserRouter>
         </ThemeProvider>

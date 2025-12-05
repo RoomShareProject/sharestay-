@@ -20,8 +20,6 @@ import {
   Typography,
 } from "@mui/material";
 import {
-  Favorite,
-  FavoriteBorder,
   GridView,
   ListAlt,
   LocationOn,
@@ -30,12 +28,12 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Link as RouterLink,
-  useNavigate,
   useSearchParams,
 } from "react-router-dom";
 import { useAuth } from "../auth/useAuth";
 import SiteFooter from "../components/SiteFooter";
 import SiteHeader from "../components/SiteHeader";
+import FavoriteButton from "../components/FavoriteButton";
 import { api } from "../lib/api";
 import { fetchFavoriteRooms, toggleFavoriteRoom } from "../lib/favorites";
 import type { RoomApiResponse, RoomSummary } from "../types/room";
@@ -155,7 +153,11 @@ const availabilityLabel = (status: RoomSummary["availabilityStatus"]) => {
   return "모집중";
 };
 
-const getRoomId = (room: RoomSummary) => room.roomId ?? room.id ?? null;
+const getRoomId = (room: RoomSummary) => {
+  const raw = room.roomId ?? room.id;
+  const num = Number(raw);
+  return Number.isFinite(num) ? num : null;
+};
 
 const isClosedStatus = (status: RoomSummary["availabilityStatus"]) => {
   if (typeof status === "number") return status >= 2;
@@ -481,9 +483,8 @@ export default function Rooms() {
       const favoriteRooms = await fetchFavoriteRooms(user.id);
       const next = new Set<number>();
       favoriteRooms.forEach((item) => {
-        if (typeof item.roomId === "number") {
-          next.add(item.roomId);
-        }
+        const id = Number(item.roomId);
+        if (Number.isFinite(id)) next.add(id);
       });
       setFavorites(next);
       setRooms((prev) =>
@@ -506,6 +507,12 @@ export default function Rooms() {
     // if (!roomId) return;
     if (!user?.id) {
       alert("로그인이 필요한 기능입니다.");
+      return;
+    }
+
+    // 호스트 로그인 차단
+    if (user.role === "HOST" || user.roles?.includes("HOST")) {
+      alert("게스트로 로그인해 주세요.");
       return;
     }
     // const currentlyFavorite = favorites.has(roomId);
@@ -742,9 +749,6 @@ export default function Rooms() {
                   {priceLabel}
                 </Typography>
                 </Stack>
-
-                <RouterLink to="/RoomMap">지도로 찾기</RouterLink>
-
                                 <Stack spacing={1}>
                   <Typography variant="subtitle2" color="text.secondary">
                     부가옵션
@@ -975,16 +979,11 @@ export default function Rooms() {
                               >
                                 공유 링크
                               </Button>
-                              <IconButton
-                                onClick={(event) => {
-                                  event.stopPropagation(); // 카드 클릭으로 인한 네비게이션 막기
-                                  toggleFavorite(room);
-                                }}
-                                color={isFavorite ? "error" : "default"}
-                                aria-label="즐겨찾기"
-                              >
-                                {isFavorite ? <Favorite /> : <FavoriteBorder />}
-                              </IconButton>
+                              <FavoriteButton
+                                  roomId={roomId!}
+                                  isLiked={isFavorite}
+                                  onToggle={() => toggleFavorite(room)}
+                                />
                             </CardActions>
                           </Card>
                         </Grid>
