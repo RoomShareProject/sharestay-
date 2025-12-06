@@ -38,6 +38,10 @@ const roomSchema = z.object({
     .string()
     .min(1, "Please enter a monthly rent amount.")
     .refine((value) => !Number.isNaN(Number(value)), "Rent must be a number."),
+    deposit: z
+    .string()
+    .min(1, "Please enter a deposit.")
+    .refine((value) => !Number.isNaN(Number(value)), "Deposit must be a number."),
   type: z.string().min(1, "Please select a room type."),
   availabilityStatus: z
     .string()
@@ -178,6 +182,7 @@ export default function EditRoom() {
     defaultValues: {
       title: "",
       rentPrice: "",
+      deposit: "",
       type: "ONE_ROOM",
       availabilityStatus: "AVAILABLE",
       address: "",
@@ -244,6 +249,8 @@ export default function EditRoom() {
           title: data.title ?? "",
           rentPrice:
             typeof data.rentPrice === "number" ? String(data.rentPrice) : "",
+          deposit:
+            typeof data.deposit === "number" ? String(data.deposit) : "",
           type: data.type ?? "ONE_ROOM",
           availabilityStatus: statusKey,
           address: data.address ?? "",
@@ -355,6 +362,7 @@ export default function EditRoom() {
 
     try {
       const rentPrice = Number(values.rentPrice);
+      const deposit = Number(values.deposit);
       let latitudeValue =
         values.latitude && values.latitude.trim().length > 0
           ? Number(values.latitude)
@@ -399,6 +407,7 @@ export default function EditRoom() {
         hostId: roomHostId,
         title: values.title,
         rentPrice,
+        deposit,  // 서버에 보내기
         address: values.address,
         type: values.type,
         latitude: latitudeValue ?? null,
@@ -545,6 +554,21 @@ export default function EditRoom() {
                       }}
                     />
                   </Grid>
+
+                  <Grid xs={12} sm={6}>
+                    <FormTextField
+                      name="deposit"
+                      control={control}
+                      label="보증금"
+                      placeholder="예: 10000000"
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">₩</InputAdornment>
+                        ),
+                      }}
+                    />
+                  </Grid>
+
                   <Grid xs={12} sm={6}>
                     <FormTextField
                       name="type"
