@@ -114,8 +114,6 @@ function App() {
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />
-              <Route path="/Contact" element={<Contact />} />
-
               <Route
                 path="/profile"
                 element={
