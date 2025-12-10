@@ -223,6 +223,16 @@ public class SecurityConfig {
                                 "/uploads/**",
                                 "/api/statistics/**"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/api/login", "/api/signup", "/api/auth/google").permitAll()
+                        .requestMatchers("/login-success", "/oauth2/**").permitAll()
+
+                        // =================== 인증 필요 경로 ===================
+                        .requestMatchers(HttpMethod.POST, "/api/rooms/**").hasAnyRole("HOST", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/rooms/**").hasAnyRole("HOST", "ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/rooms/**").hasAnyRole("HOST", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/rooms/**").hasAnyRole("HOST", "ADMIN")
+                        .requestMatchers(HttpMethod.POST,"/api/favorites/**").authenticated()
 
                         // 🔹 preflight
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
